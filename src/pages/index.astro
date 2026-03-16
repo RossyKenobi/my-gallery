@@ -47,6 +47,10 @@ const posts = (postsData || []).map(post => ({
       ))}
     </main>
 
+    <div class="import-trigger-wrapper">
+      <button class="import-btn" id="open-import-modal">Import More</button>
+    </div>
+
     <section id="contact" class="contact-section">
       <div class="contact-container">
         <h2 class="contact-title">Contact</h2>
@@ -59,11 +63,44 @@ const posts = (postsData || []).map(post => ({
       </div>
     </section>
 
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="password-modal">
+      <div class="modal-content">
+        <h3 class="modal-title">Verification Required</h3>
+        <div class="modal-input-group">
+          <label class="modal-caption">Enter Administrative Password</label>
+          <input type="password" id="password-input" class="modal-input" placeholder="••••••••" />
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn" id="close-password-modal">Cancel</button>
+          <button class="modal-btn confirm" id="submit-password">Verify</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="import-modal">
+      <div class="modal-content">
+        <h3 class="modal-title">Import More</h3>
+        <div class="modal-input-group">
+          <label class="modal-caption">input embed keys</label>
+          <input type="text" id="embed-key-input" class="modal-input" placeholder="Paste Instagram Link or Embed Code" />
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn" id="close-import-modal">Cancel</button>
+          <button class="modal-btn confirm" id="confirm-import">Confirm</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       import PhotoSwipe from 'photoswipe';
 
       document.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
         wrapper.addEventListener('click', (e) => {
+          // If the click was on the delete button, don't open PhotoSwipe
+          if ((e.target as HTMLElement).closest('.delete-btn')) return;
+
           e.preventDefault();
           const imagesRaw = wrapper.getAttribute('data-images');
           const captionStr = wrapper.getAttribute('data-caption');
@@ -121,6 +158,109 @@ const posts = (postsData || []).map(post => ({
           }
         });
       });
+
+      // --- Import/Delete Logic ---
+      const GITHUB_TOKEN_KEY = 'gh_admin_token';
+      const PASSWORD = 'steveyfff';
+      let pendingAction: 'IMPORT' | 'DELETE' | null = null;
+      let pendingPostId: string | null = null;
+
+      const passwordModal = document.getElementById('password-modal')!;
+      const importModal = document.getElementById('import-modal')!;
+      const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+      const embedKeyInput = document.getElementById('embed-key-input') as HTMLInputElement;
+
+      const openModal = (modal: HTMLElement) => modal.classList.add('active');
+      const closeModal = (modal: HTMLElement) => {
+        modal.classList.remove('active');
+        passwordInput.value = '';
+        embedKeyInput.value = '';
+      };
+
+      // Modal Triggers
+      document.getElementById('open-import-modal')?.addEventListener('click', () => {
+        pendingAction = 'IMPORT';
+        openModal(passwordModal);
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          pendingAction = 'DELETE';
+          pendingPostId = btn.getAttribute('data-id');
+          openModal(passwordModal);
+        });
+      });
+
+      // Close Buttons
+      document.getElementById('close-password-modal')?.addEventListener('click', () => closeModal(passwordModal));
+      document.getElementById('close-import-modal')?.addEventListener('click', () => closeModal(importModal));
+
+      // Password Submission
+      document.getElementById('submit-password')?.addEventListener('click', () => {
+        if (passwordInput.value === PASSWORD) {
+          closeModal(passwordModal);
+          if (pendingAction === 'IMPORT') {
+            openModal(importModal);
+          } else if (pendingAction === 'DELETE') {
+            handleGithubAction('DELETE', null, pendingPostId);
+          }
+        } else {
+          alert('Incorrect password.');
+        }
+      });
+
+      // Confirm Import
+      document.getElementById('confirm-import')?.addEventListener('click', () => {
+        const embedKey = embedKeyInput.value.trim();
+        if (embedKey) {
+          handleGithubAction('ADD', embedKey, null);
+          closeModal(importModal);
+        }
+      });
+
+      async function handleGithubAction(action: 'ADD' | 'DELETE', embedKey: string | null, postId: string | null) {
+        let token = localStorage.getItem(GITHUB_TOKEN_KEY);
+        if (!token) {
+          token = prompt('Enter your GitHub Personal Access Token to trigger update:');
+          if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token);
+          else return;
+        }
+
+        const statusLabel = action === 'ADD' ? 'Importing...' : 'Deleting...';
+        console.log(`${statusLabel} post...`);
+
+        try {
+          // Note: We need to replace YOUR_USERNAME/YOUR_REPO dynamically or via build env
+          // For now, using placeholders which the user should replace or I can find
+          const repo = 'RossyKenobi/Test.1'; 
+          const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/sync-instagram.yml/dispatches`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `token ${token}`
+            },
+            body: JSON.stringify({ 
+              ref: 'main',
+              inputs: {
+                action: action,
+                embed_key: embedKey || '',
+                post_id: postId || ''
+              }
+            })
+          });
+
+          if (res.ok || res.status === 204) {
+            alert(`Action triggered successfully! Changes will appear in 1-2 minutes.`);
+          } else {
+            const err = await res.json();
+            alert(`Failed: ${err.message || res.statusText}`);
+          }
+        } catch (e: any) {
+          alert(`Error: ${e.message}`);
+        }
+      }
     </script>
   </body>
 </html>

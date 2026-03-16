@@ -2,11 +2,12 @@ import fs from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 
-const ACCESS_TOKEN = process.env.IG_ACCESS_TOKEN;
-const API_URL = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,timestamp,children{media_type,media_url}&access_token=${ACCESS_TOKEN}`;
+const ACTION = process.env.IG_ACTION || 'SYNC';
+const EMBED_KEY = process.env.IG_EMBED_KEY;
+const POST_ID_DELETE = process.env.IG_POST_ID;
 
-// Resolve paths relative to the project root
-const ASSETS_DIR = path.resolve('../../src/assets/images');
+// Resolve paths relative to the project root (adjusting if running from .github/scripts)
+const ASSETS_DIR = path.resolve('../../public/images/posts');
 const DATA_DIR = path.resolve('../../src/data');
 
 async function downloadAndOptimizeImage(url, id, index = 0) {
@@ -15,47 +16,145 @@ async function downloadAndOptimizeImage(url, id, index = 0) {
   
   try {
     await fs.access(filepath);
-    return `~/assets/images/${filename}`;
+    return `/images/posts/${filename}`;
   } catch (e) {
     // File does not exist, proceed
   }
 
   console.log(`Downloading ${filename}...`);
-  const response = await fetch(url);
-  const buffer = await response.arrayBuffer();
-  
-  await sharp(buffer)
-    .resize({ width: 2560, withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toFile(filepath);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+    const buffer = await response.arrayBuffer();
     
-  return `~/assets/images/${filename}`;
+    await sharp(buffer)
+      .resize({ width: 2560, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(filepath);
+      
+    return `/images/posts/${filename}`;
+  } catch (err) {
+    console.error(`Error downloading image ${url}:`, err);
+    return null;
+  }
+}
+
+async function getShortcode(input) {
+  const regex = /\/p\/([A-Za-z0-9_-]+)\//;
+  const match = input.match(regex);
+  return match ? match[1] : input.trim();
+}
+
+async function scrapePost(shortcode) {
+  const url = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+  console.log(`Scraping ${url}...`);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+  });
+  const html = await response.text();
+
+  // Robust extraction of CDN image URLs
+  const imgRegex = /https:\/\/scontent[^" ]+?\.jpg[^" ]*/g;
+  const rawImages = (html.match(imgRegex) || []).map(url => url.replace(/\\u0026/g, '&').replace(/&amp;/g, '&'));
+  
+  const uniqueImages = new Map();
+  
+  for (const imgUrl of rawImages) {
+    const leafName = imgUrl.split('?')[0].split('/').pop();
+    if (!leafName) continue;
+    
+    // Score based on resolution indicators
+    let score = 0;
+    if (imgUrl.includes('s1080x1080')) score = 3;
+    else if (imgUrl.includes('s750x750')) score = 2;
+    else if (imgUrl.includes('s640x640')) score = 1;
+
+    if (!uniqueImages.has(leafName) || score > uniqueImages.get(leafName).score) {
+      uniqueImages.set(leafName, { url: imgUrl, score });
+    }
+  }
+
+  const images = Array.from(uniqueImages.values())
+    .filter(item => !item.url.includes('s150x150')) // Exclude profile pics/thumbnails
+    .map(item => item.url);
+
+  // Extract caption
+  const captionRegex = /"caption":"([^"]+)"/;
+  const captionMatch = html.match(captionRegex);
+  let caption = captionMatch ? captionMatch[1] : '';
+  caption = caption.replace(/\\n/g, '\n').replace(/\\u([0-9a-fA-F]{4})/g, (m, p1) => String.fromCharCode(parseInt(p1, 16)));
+
+  return {
+    id: shortcode,
+    caption,
+    timestamp: new Date().toISOString(),
+    images: images.slice(0, 10), // Limit to 10 images
+    category: 'Embedded'
+  };
 }
 
 async function run() {
-  if (!ACCESS_TOKEN) {
-    console.warn("No IG_ACCESS_TOKEN found. Please check your environment variables.");
-    // In CI, we might want to throw an error so the action fails, but for local testing warning is fine.
-    // Creating dummy file for initial development
-    await fs.mkdir(ASSETS_DIR, { recursive: true });
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const dummyPosts = [];
-    await fs.writeFile(path.join(DATA_DIR, 'posts.json'), JSON.stringify(dummyPosts, null, 2));
-    return;
-  }
-  
   await fs.mkdir(ASSETS_DIR, { recursive: true });
   await fs.mkdir(DATA_DIR, { recursive: true });
 
+  const postsPath = path.join(DATA_DIR, 'posts.json');
+  let existingPosts = [];
+  try {
+    const data = await fs.readFile(postsPath, 'utf-8');
+    existingPosts = JSON.parse(data);
+  } catch (e) {}
+
+  if (ACTION === 'DELETE') {
+    console.log(`Deleting post ${POST_ID_DELETE}...`);
+    const filteredPosts = existingPosts.filter(p => p.id !== POST_ID_DELETE);
+    await fs.writeFile(postsPath, JSON.stringify(filteredPosts, null, 2));
+    console.log(`Deleted ${POST_ID_DELETE}.`);
+    return;
+  }
+
+  if (ACTION === 'ADD') {
+    if (!EMBED_KEY) {
+      console.error("No EMBED_KEY provided for ADD action.");
+      return;
+    }
+    const shortcode = await getShortcode(EMBED_KEY);
+    console.log(`Adding post with shortcode: ${shortcode}`);
+    
+    const postData = await scrapePost(shortcode);
+    const downloadedImages = [];
+    for (let i = 0; i < postData.images.length; i++) {
+        const imgPath = await downloadAndOptimizeImage(postData.images[i], postData.id, i);
+        if (imgPath) downloadedImages.push(imgPath);
+    }
+    
+    postData.images = downloadedImages;
+    if (postData.images.length === 0) {
+        console.error("Failed to download any images for the post.");
+        return;
+    }
+
+    // Prepend to list
+    const updatedPosts = [postData, ...existingPosts.filter(p => p.id !== postData.id)];
+    await fs.writeFile(postsPath, JSON.stringify(updatedPosts, null, 2));
+    console.log(`Successfully added post ${shortcode}.`);
+    return;
+  }
+
+  // DEFAULT: SYNC (Original Logic)
+  if (!ACCESS_TOKEN) {
+    console.warn("No IG_ACCESS_TOKEN found. Sync skipped.");
+    return;
+  }
+  
+  console.log("Syncing all posts from Instagram API...");
   const res = await fetch(API_URL);
   const data = await res.json();
 
-  if (data.error) {
-    throw new Error(data.error.message);
-  }
+  if (data.error) throw new Error(data.error.message);
 
-  const posts = [];
-
+  const syncedPosts = [];
   for (const item of data.data) {
     if (item.media_type === 'VIDEO') continue;
 
@@ -64,46 +163,37 @@ async function run() {
       caption: item.caption || '',
       timestamp: item.timestamp,
       images: [],
-      hidden: false, // CMS Toggle
-      category: 'Uncategorized' // CMS Tags
+      hidden: false,
+      category: 'Uncategorized'
     };
 
     if (item.media_type === 'IMAGE') {
       const imgPath = await downloadAndOptimizeImage(item.media_url, item.id);
-      post.images.push(imgPath);
+      if (imgPath) post.images.push(imgPath);
     } else if (item.media_type === 'CAROUSEL_ALBUM') {
       if (item.children && item.children.data) {
         let idx = 0;
         for (const child of item.children.data) {
           if (child.media_type === 'IMAGE') {
             const imgPath = await downloadAndOptimizeImage(child.media_url, item.id, idx++);
-            post.images.push(imgPath);
+            if (imgPath) post.images.push(imgPath);
           }
         }
       }
     }
     
-    if (post.images.length > 0) {
-      posts.push(post);
-    }
+    if (post.images.length > 0) syncedPosts.push(post);
   }
 
-  // Preserve existing user modifications from CMS (like hidden toggles and categories)
-  let existingData = [];
-  try {
-    const existingRaw = await fs.readFile(path.join(DATA_DIR, 'posts.json'), 'utf-8');
-    existingData = JSON.parse(existingRaw);
-  } catch(e) {}
-
-  const mergedPosts = posts.map(newPost => {
-    const existing = existingData.find(p => p.id === newPost.id);
+  const mergedPosts = syncedPosts.map(newPost => {
+    const existing = existingPosts.find(p => p.id === newPost.id);
     if (existing) {
       return { ...newPost, hidden: existing.hidden, category: existing.category };
     }
     return newPost;
   });
 
-  await fs.writeFile(path.join(DATA_DIR, 'posts.json'), JSON.stringify(mergedPosts, null, 2));
+  await fs.writeFile(postsPath, JSON.stringify(mergedPosts, null, 2));
   console.log("Successfully synced Instagram posts!");
 }
 

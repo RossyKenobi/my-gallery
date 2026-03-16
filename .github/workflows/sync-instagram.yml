@@ -3,7 +3,18 @@ name: Sync Instagram Data
 on:
   schedule:
     - cron: '0 0 * * *' # Daily at midnight
-  workflow_dispatch: # Manual trigger from CMS
+  workflow_dispatch: # Manual trigger from web UI or CMS
+    inputs:
+      action:
+        description: 'Action to perform (SYNC, ADD, DELETE)'
+        required: true
+        default: 'SYNC'
+      embed_key:
+        description: 'Instagram Embed Key or URL'
+        required: false
+      post_id:
+        description: 'Post ID to delete'
+        required: false
 
 jobs:
   sync_instagram:
@@ -25,6 +36,9 @@ jobs:
         working-directory: ./.github/scripts
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_ACTION: ${{ github.event.inputs.action || 'SYNC' }}
+          IG_EMBED_KEY: ${{ github.event.inputs.embed_key }}
+          IG_POST_ID: ${{ github.event.inputs.post_id }}
         run: npm start
 
       - name: Update Long-Lived Token Secret (If Applicable)
