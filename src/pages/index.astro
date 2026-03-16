@@ -3,7 +3,8 @@ import '../styles/global.css';
 import GalleryPost from '../components/GalleryPost.astro';
 import postsData from '../data/posts.json';
 
-const base = import.meta.env.BASE_URL;
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
 const posts = (postsData || []).map(post => ({
   ...post,
   images: (post.images || []).map(img => `${base}${img.startsWith('/') ? img.slice(1) : img}`)
