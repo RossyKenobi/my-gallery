@@ -260,10 +260,11 @@ const posts = (postsData || []).map(post => ({
         
         const repo = 'RossyKenobi/Test.1';
         let startTime = Date.now();
-        let maxDuration = 180000; // 3 minutes timeout
+        let maxDuration = 300000; // 5 minutes timeout
 
         const poll = async () => {
           try {
+            // Phase 1: Wait for Sync Workflow
             const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=sync-instagram.yml&per_page=1`, {
               headers: { 'Authorization': `token ${token}` }
             });
@@ -271,7 +272,6 @@ const posts = (postsData || []).map(post => ({
             const latestRun = data.workflow_runs[0];
 
             if (!latestRun || new Date(latestRun.created_at).getTime() < startTime - 10000) {
-              // Still waiting for the run to be created
               progressStatusText.innerText = 'Queued in GitHub...';
               progressBarInner.style.width = '20%';
             } else {
@@ -280,19 +280,42 @@ const posts = (postsData || []).map(post => ({
 
               if (status === 'queued') {
                 progressStatusText.innerText = 'Initializing build...';
-                progressBarInner.style.width = '35%';
+                progressBarInner.style.width = '30%';
               } else if (status === 'in_progress') {
                 progressStatusText.innerText = 'Extracting Instagram photos...';
-                progressBarInner.style.width = '65%';
+                progressBarInner.style.width = '50%';
               } else if (status === 'completed') {
                 if (conclusion === 'success') {
-                  progressBarInner.style.width = '100%';
-                  progressStatusText.innerText = 'Success! Content updated.';
-                  progressTitle.innerText = 'Import Complete';
-                  refreshPageBtn.classList.add('active');
-                  return; // Stop polling
+                  // Phase 2: Wait for Deployment Workflow
+                  progressStatusText.innerText = 'Sync complete. Waiting for deployment...';
+                  progressBarInner.style.width = '70%';
+                  
+                  const deployRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=deploy.yml&per_page=1`, {
+                    headers: { 'Authorization': `token ${token}` }
+                  });
+                  const deployData = await deployRes.json();
+                  const latestDeploy = deployData.workflow_runs[0];
+
+                  // Check if this deployment was triggered after our sync finished
+                  if (latestDeploy && new Date(latestDeploy.created_at).getTime() > new Date(latestRun.updated_at).getTime() - 30000) {
+                    if (latestDeploy.status === 'completed') {
+                      if (latestDeploy.conclusion === 'success') {
+                        progressBarInner.style.width = '100%';
+                        progressStatusText.innerText = 'Success! Website updated.';
+                        progressTitle.innerText = 'Import Complete';
+                        refreshPageBtn.classList.add('active');
+                        return;
+                      } else {
+                        progressStatusText.innerText = `Deployment failed: ${latestDeploy.conclusion}`;
+                        return;
+                      }
+                    } else {
+                      progressStatusText.innerText = 'Deploying to GitHub Pages...';
+                      progressBarInner.style.width = '85%';
+                    }
+                  }
                 } else {
-                  progressStatusText.innerText = `Failed: ${conclusion}`;
+                  progressStatusText.innerText = `Sync failed: ${conclusion}`;
                   setTimeout(() => closeModal(progressModal), 3000);
                   return;
                 }
@@ -300,9 +323,10 @@ const posts = (postsData || []).map(post => ({
             }
 
             if (Date.now() - startTime < maxDuration) {
-              setTimeout(poll, 4000);
+              setTimeout(poll, 5000);
             } else {
               progressStatusText.innerText = 'Timed out. Please check GitHub Actions manually.';
+              refreshPageBtn.classList.add('active'); // Allow manual refresh anyway
             }
           } catch (e) {
             console.error('Polling error:', e);

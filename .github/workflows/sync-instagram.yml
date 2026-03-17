@@ -51,4 +51,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: sync latest instagram posts"
-          file_pattern: src/data/posts.json src/assets/images/*.webp
+          file_pattern: src/data/posts.json public/images/posts/*.webp
