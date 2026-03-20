@@ -55,13 +55,18 @@ async function scrapePost(shortcode) {
   });
   const html = await response.text();
 
-  // Robust extraction of CDN image URLs
-  const imgRegex = /https:\/\/scontent[^" ]+?\.jpg[^" ]*/g;
+  // Robust extraction of CDN image URLs (JPG and WEBP)
+  const imgRegex = /https:\/\/scontent[^" ]+?\.(?:jpg|webp)[^" ]*/g;
   const rawImages = (html.match(imgRegex) || []).map(url => url.replace(/\\u0026/g, '&').replace(/&amp;/g, '&'));
   
+  console.log(`Found ${rawImages.length} raw image URL matches in HTML.`);
+
   const uniqueImages = new Map();
   
   for (const imgUrl of rawImages) {
+    // Basic filter for tracking pixels or tiny icons
+    if (imgUrl.includes('sticker') || imgUrl.includes('emoji') || imgUrl.includes('checkmark')) continue;
+
     const leafName = imgUrl.split('?')[0].split('/').pop();
     if (!leafName) continue;
     
@@ -117,12 +122,18 @@ async function run() {
   if (ACTION === 'ADD') {
     if (!EMBED_KEY) {
       console.error("No EMBED_KEY provided for ADD action.");
-      return;
+      process.exit(1);
     }
     const shortcode = await getShortcode(EMBED_KEY);
     console.log(`Adding post with shortcode: ${shortcode}`);
     
     const postData = await scrapePost(shortcode);
+    
+    if (!postData.images || postData.images.length === 0) {
+      console.error("Scraper found 0 images in the embed. Instagram might be blocking the request or the structure changed.");
+      process.exit(1);
+    }
+
     const downloadedImages = [];
     for (let i = 0; i < postData.images.length; i++) {
         const imgPath = await downloadAndOptimizeImage(postData.images[i], postData.id, i);
@@ -131,14 +142,14 @@ async function run() {
     
     postData.images = downloadedImages;
     if (postData.images.length === 0) {
-        console.error("Failed to download any images for the post.");
-        return;
+        console.error("Failed to download/optimize any of the found images.");
+        process.exit(1);
     }
 
     // Prepend to list
     const updatedPosts = [postData, ...existingPosts.filter(p => p.id !== postData.id)];
     await fs.writeFile(postsPath, JSON.stringify(updatedPosts, null, 2));
-    console.log(`Successfully added post ${shortcode}.`);
+    console.log(`Successfully added post ${shortcode} with ${downloadedImages.length} images.`);
     return;
   }
 
