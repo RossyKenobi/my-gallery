@@ -269,12 +269,40 @@ const posts = (postsData || []).map(post => ({
       window.addEventListener('scroll', () => {
         const scrollY = window.scrollY;
         const viewportHeight = window.innerHeight;
-        const progress = Math.min(scrollY / viewportHeight, 1);
         
-        // Progress goes from 0 to 1
-        heroOverlay.style.background = `rgba(0, 0, 0, ${progress * 0.8})`; // Darkens to 80%
+        // Cap the progress so it doesn't get completely dark
+        const progress = Math.min(scrollY / (viewportHeight * 0.8), 1);
+        
+        heroOverlay.style.background = `rgba(0, 0, 0, ${progress * 0.55})`; // Max 55% dark
         heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
       });
+
+      // --- Modals & DOM Elements Initialization ---
+      const passwordModal = document.getElementById('password-modal')!;
+      const importModal = document.getElementById('import-modal')!;
+      const progressModal = document.getElementById('progress-modal')!;
+      const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+      const embedKeyInput = document.getElementById('embed-key-input') as HTMLInputElement;
+      const fileInput = document.getElementById('local-file-input') as HTMLInputElement;
+      const preview = document.getElementById('file-preview')!;
+      const progressBarInner = document.getElementById('progress-bar-inner')!;
+      const progressStatusText = document.getElementById('progress-status-text')!;
+      const progressTitle = document.getElementById('progress-title')!;
+      const refreshPageBtn = document.getElementById('refresh-page-btn') as HTMLButtonElement;
+
+      const openModal = (modal: HTMLElement) => {
+        modal.classList.add('active');
+      };
+      const closeModal = (modal: HTMLElement) => {
+        modal.classList.remove('active');
+        if (passwordInput) passwordInput.value = '';
+        if (embedKeyInput) embedKeyInput.value = '';
+        if (preview) preview.innerHTML = '';
+      };
+
+      document.getElementById('close-password-modal')?.addEventListener('click', () => closeModal(passwordModal));
+      document.getElementById('close-import-modal')?.addEventListener('click', () => closeModal(importModal));
+      refreshPageBtn?.addEventListener('click', () => window.location.reload());
 
       // --- Edit Mode Logic ---
       const GITHUB_TOKEN_KEY = 'gh_admin_token';
@@ -358,10 +386,8 @@ const posts = (postsData || []).map(post => ({
         });
       });
 
-      const fileInput = document.getElementById('local-file-input') as HTMLInputElement;
-      const preview = document.getElementById('file-preview')!;
-      
-      fileInput.addEventListener('change', () => {
+      fileInput?.addEventListener('change', () => {
+        if (!preview) return;
         preview.innerHTML = '';
         Array.from(fileInput.files || []).forEach(file => {
           const reader = new FileReader();
@@ -381,14 +407,6 @@ const posts = (postsData || []).map(post => ({
       });
 
       // --- GitHub Actions Logic ---
-      const progressModal = document.getElementById('progress-modal')!;
-      const progressBarInner = document.getElementById('progress-bar-inner')!;
-      const progressStatusText = document.getElementById('progress-status-text')!;
-      const progressTitle = document.getElementById('progress-title')!;
-      const refreshPageBtn = document.getElementById('refresh-page-btn') as HTMLButtonElement;
-
-      refreshPageBtn.addEventListener('click', () => window.location.reload());
-
       async function handleGithubAction(action: string, embedKey: string | null, postId: string | null) {
         let token = localStorage.getItem(GITHUB_TOKEN_KEY);
         if (!token) {
@@ -507,10 +525,15 @@ const posts = (postsData || []).map(post => ({
              
              const pswp = new PhotoSwipe({
                dataSource: pswpItems,
-               padding: { top: 40, bottom: 80, left: 0, right: 0 },
                mainScrollEnd: true,
-               // @ts-ignore
-               spacing: 0.15
+               // Use negative spacing on large screens to pull adjacent items into view
+               spacing: window.innerWidth > 768 ? -0.25 : 0.05
+             });
+             
+             // Dynamic padding to shrink the main image and leave room for adjacent slides
+             pswp.on('beforeResize', () => {
+                 const pad = window.innerWidth > 768 ? window.innerWidth * 0.15 : 20;
+                 pswp.options.padding = { top: 40, bottom: 80, left: pad, right: pad };
              });
              
              pswp.on('uiRegister', function() {
