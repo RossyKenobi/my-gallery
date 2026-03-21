@@ -144,6 +144,21 @@ async function run() {
     return;
   }
 
+    if (ACTION === 'REORDER') {
+        const newOrder = JSON.parse(EMBED_KEY); // In REORDER mode, embed_key contains the IDs array
+        console.log(`Reordering posts based on: ${newOrder.join(', ')}`);
+        
+        const orderedPosts = newOrder.map(id => existingPosts.find(p => p.id === id)).filter(Boolean);
+        
+        // Keep any posts that weren't in the newOrder array (safety)
+        const missingPosts = existingPosts.filter(p => !newOrder.includes(p.id));
+        const finalPosts = [...orderedPosts, ...missingPosts];
+
+        await fs.writeFile(postsPath, JSON.stringify(finalPosts, null, 2));
+        console.log("Successfully reordered posts.");
+        return;
+    }
+
   if (ACTION === 'ADD') {
     if (!EMBED_KEY) {
       console.error("No EMBED_KEY provided for ADD action.");
@@ -171,8 +186,8 @@ async function run() {
         process.exit(1);
     }
 
-    // Prepend to list
-    const updatedPosts = [postData, ...existingPosts.filter(p => p.id !== postData.id)];
+    // Append to list
+    const updatedPosts = [...existingPosts.filter(p => p.id !== postData.id), postData];
     await fs.writeFile(postsPath, JSON.stringify(updatedPosts, null, 2));
     console.log(`Successfully added post ${shortcode} with ${downloadedImages.length} images.`);
     return;

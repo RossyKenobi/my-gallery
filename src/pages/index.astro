@@ -47,15 +47,32 @@ const posts = (postsData || []).map(post => ({
       ))}
     </main>
 
-    <div class="import-trigger-wrapper">
-      <button class="import-btn" id="open-import-modal">Import More</button>
+    <div class="edit-controls">
+      <button class="import-btn" id="open-edit-mode">Edit</button>
+      <div id="edit-actions" class="hidden">
+        <button class="import-btn secondary" id="add-new-post">Import</button>
+        <button class="import-btn confirm" id="save-edits">Done</button>
+      </div>
     </div>
 
     <section id="contact" class="contact-section">
       <div class="contact-container">
         <h2 class="contact-title">Contact</h2>
-        <div class="contact-email">
-          <a href="mailto:SMYFY1@OUTLOOK.COM">SMYFY1@OUTLOOK.COM</a>
+        <div class="contact-list">
+          <div class="contact-item">
+            <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <a href="mailto:SMYFY1@OUTLOOK.COM">SMYFY1@OUTLOOK.COM</a>
+          </div>
+          <div class="contact-item">
+            <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            <a href="https://instagram.com/theonlyyff" target="_blank">@THEONLYYFF</a>
+          </div>
         </div>
         <div class="contact-details">
           <p>Available for visual collaborations and photography projects.</p>
@@ -82,11 +99,29 @@ const posts = (postsData || []).map(post => ({
     <!-- Import Modal -->
     <div class="modal-overlay" id="import-modal">
       <div class="modal-content">
-        <h3 class="modal-title">Import More</h3>
-        <div class="modal-input-group">
-          <label class="modal-caption">input embed keys</label>
-          <input type="text" id="embed-key-input" class="modal-input" placeholder="Paste Instagram Link or Embed Code" />
+        <h3 class="modal-title">Import New Work</h3>
+        
+        <div class="import-tabs">
+          <button class="tab-btn active" data-tab="ig">Instagram</button>
+          <button class="tab-btn" data-tab="local">Local Files</button>
         </div>
+
+        <div id="ig-tab" class="tab-content active">
+          <div class="modal-input-group">
+            <label class="modal-caption">instagram embed key or url</label>
+            <input type="text" id="embed-key-input" class="modal-input" placeholder="Paste link..." />
+          </div>
+        </div>
+
+        <div id="local-tab" class="tab-content">
+          <div class="modal-input-group">
+            <label class="modal-caption">select images</label>
+            <input type="file" id="local-file-input" class="modal-input" multiple accept="image/*" />
+            <div id="file-preview" class="file-preview-grid"></div>
+            <textarea id="local-caption-input" class="modal-input" placeholder="Add a caption..."></textarea>
+          </div>
+        </div>
+
         <div class="modal-actions">
           <button class="modal-btn" id="close-import-modal">Cancel</button>
           <button class="modal-btn confirm" id="confirm-import">Confirm</button>
@@ -109,96 +144,341 @@ const posts = (postsData || []).map(post => ({
       </div>
     </div>
 
+    <style is:global>
+      /* --- Hero Scroll Effect --- */
+      .hero-section {
+        position: relative;
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+      }
+      .hero-bg {
+        position: fixed; /* Parallax effect */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -2;
+      }
+      .hero-overlay-blur {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0);
+        backdrop-filter: blur(0px);
+        z-index: -1;
+        pointer-events: none;
+        transition: backdrop-filter 0.1s linear, background 0.1s linear;
+      }
+
+      /* --- Edit Mode Styles --- */
+      body.is-editing .gallery-item-wrapper {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        padding: 4px;
+        cursor: grab;
+      }
+      body.is-editing .delete-btn {
+        display: flex !important;
+        opacity: 1 !important;
+        background: #ef4444 !important;
+      }
+      .edit-controls {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        display: flex;
+        gap: 12px;
+        z-index: 1000;
+      }
+      .hidden { display: none !important; }
+
+      /* --- Contact List --- */
+      .contact-list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+      .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .contact-icon {
+        width: 20px;
+        height: 20px;
+        opacity: 0.6;
+      }
+      .contact-item a {
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-decoration: none;
+        color: white;
+        font-size: 0.9rem;
+      }
+
+      /* --- Import Modal Tabs --- */
+      .import-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 24px;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: color 0.3s;
+      }
+      .tab-btn.active {
+        color: white;
+        border-bottom: 2px solid white;
+      }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+
+      /* --- PhotoSwipe Carousel Look --- */
+      .pswp__img {
+        border-radius: 4px;
+        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+      }
+      /* Ensure side images are slightly visible */
+      .pswp__item {
+        padding: 0 10% !important;
+      }
+
+    </style>
+
     <script>
       import PhotoSwipe from 'photoswipe';
+      import Sortable from 'sortablejs';
 
-      document.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
-        wrapper.addEventListener('click', (e) => {
-          // If the click was on the delete button, don't open PhotoSwipe
-          if ((e.target as HTMLElement).closest('.delete-btn')) return;
+      // --- Hero Scroll Logic ---
+      const heroOverlay = document.createElement('div');
+      heroOverlay.className = 'hero-overlay-blur';
+      document.body.prepend(heroOverlay);
 
-          e.preventDefault();
-          const imagesRaw = wrapper.getAttribute('data-images');
-          const captionStr = wrapper.getAttribute('data-caption');
+      window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        const viewportHeight = window.innerHeight;
+        const progress = Math.min(scrollY / viewportHeight, 1);
+        
+        // Progress goes from 0 to 1
+        heroOverlay.style.background = `rgba(0, 0, 0, ${progress * 0.8})`; // Darkens to 80%
+        heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
+      });
+
+      // --- Edit Mode Logic ---
+      const GITHUB_TOKEN_KEY = 'gh_admin_token';
+      const PASSWORD = 'steveyfff';
+      let isEditMode = false;
+      let sortableInstance: any = null;
+      let pendingAction: 'IMPORT' | 'DELETE' | 'ENTER_EDIT' | 'REORDER' | null = null;
+      let pendingPostId: string | null = null;
+
+      const editBtn = document.getElementById('open-edit-mode')!;
+      const editActions = document.getElementById('edit-actions')!;
+      const saveBtn = document.getElementById('save-edits')!;
+      const addBtn = document.getElementById('add-new-post')!;
+
+      editBtn.addEventListener('click', () => {
+        if (!isEditMode) {
+          pendingAction = 'ENTER_EDIT';
+          openModal(passwordModal);
+        }
+      });
+
+      // Update password submission
+      document.getElementById('submit-password')?.addEventListener('click', () => {
+        const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+        const errorEl = document.getElementById('password-error')!;
+        if (passwordInput.value === PASSWORD) {
+          errorEl.classList.remove('show');
+          closeModal(passwordModal);
           
-          if (imagesRaw) {
-             const imagesArray = JSON.parse(imagesRaw);
-             // We use original dimensions mapping if available, but for now fallback to large
-             const pswpItems = imagesArray.map(imgSrc => ({
-               src: imgSrc,
-               width: 0, // Set to 0 to let initial load handle it or avoid stretching
-               height: 0,
-               alt: captionStr
-             }));
-             
-             const pswp = new PhotoSwipe({
-               dataSource: pswpItems,
-               padding: { top: 20, bottom: 80, left: 20, right: 20 },
-               wheelToZoom: true
-             });
-             
-             // Inject custom caption
-             pswp.on('uiRegister', function() {
-                pswp.ui.registerElement({
-                  name: 'custom-caption',
-                  order: 9,
-                  isButton: false,
-                  appendTo: 'root',
-                  html: '',
-                  onInit: (el, pswpInstance) => {
-                    const updateCaption = () => {
-                      el.innerHTML = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
-                    };
-                    pswpInstance.on('change', updateCaption);
-                    updateCaption();
-                  }
-                });
-             });
-             
-             // Dynamic image size calculation prior to load to avoid wrong aspect ratios
-             pswp.on('gettingData', (e) => {
-               const item = e.data;
-               if (item.width > 0 && item.height > 0) return; // Already has size
-
-               const img = new Image();
-               img.onload = () => {
-                 item.width = img.naturalWidth;
-                 item.height = img.naturalHeight;
-                 pswp.refreshSlideContent(e.index);
-                 pswp.updateSize(true);
-               };
-               img.src = item.src;
-             });
-
-             pswp.init();
+          if (pendingAction === 'ENTER_EDIT') {
+            enterEditMode();
+          } else if (pendingAction === 'IMPORT') {
+            openModal(importModal);
+          } else if (pendingAction === 'DELETE') {
+            handleGithubAction('DELETE', null, pendingPostId);
           }
+        } else {
+          errorEl.classList.add('show');
+        }
+      });
+
+      function enterEditMode() {
+        isEditMode = true;
+        document.body.classList.add('is-editing');
+        editBtn.classList.add('hidden');
+        editActions.classList.remove('hidden');
+
+        const el = document.getElementById('gallery')!;
+        sortableInstance = new Sortable(el, {
+          animation: 150,
+          ghostClass: 'sortable-ghost'
+        });
+      }
+
+      saveBtn.addEventListener('click', async () => {
+        const orderNodes = Array.from(document.querySelectorAll('.gallery-item-wrapper'));
+        const newOrder = orderNodes.map(node => node.getAttribute('data-id'));
+        
+        // We'll trigger a workflow to reorder the JSON
+        handleGithubAction('REORDER', JSON.stringify(newOrder), null);
+        exitEditMode();
+      });
+
+      function exitEditMode() {
+        isEditMode = false;
+        document.body.classList.remove('is-editing');
+        editBtn.classList.remove('hidden');
+        editActions.classList.add('hidden');
+        if (sortableInstance) sortableInstance.destroy();
+      }
+
+      // --- Modal/Tabs ---
+      const tabs = document.querySelectorAll('.tab-btn');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const target = (tab as HTMLElement).dataset.tab;
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          document.getElementById(`${target}-tab`)?.classList.add('active');
         });
       });
 
-      // --- Import/Delete Logic ---
-      const GITHUB_TOKEN_KEY = 'gh_admin_token';
-      const PASSWORD = 'steveyfff';
-      let pendingAction: 'IMPORT' | 'DELETE' | null = null;
-      let pendingPostId: string | null = null;
-
-      const passwordModal = document.getElementById('password-modal')!;
-      const importModal = document.getElementById('import-modal')!;
-      const passwordInput = document.getElementById('password-input') as HTMLInputElement;
-      const embedKeyInput = document.getElementById('embed-key-input') as HTMLInputElement;
-
-      const openModal = (modal: HTMLElement) => modal.classList.add('active');
-      const closeModal = (modal: HTMLElement) => {
-        modal.classList.remove('active');
-        passwordInput.value = '';
-        embedKeyInput.value = '';
-      };
-
-      // Modal Triggers
-      document.getElementById('open-import-modal')?.addEventListener('click', () => {
-        pendingAction = 'IMPORT';
-        openModal(passwordModal);
+      const fileInput = document.getElementById('local-file-input') as HTMLInputElement;
+      const preview = document.getElementById('file-preview')!;
+      
+      fileInput.addEventListener('change', () => {
+        preview.innerHTML = '';
+        Array.from(fileInput.files || []).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            div.innerHTML = `<img src="${e.target?.result}" style="width:60px;height:60px;object-fit:cover;border-radius:4px" />`;
+            preview.appendChild(div);
+          };
+          reader.readAsDataURL(file);
+        });
       });
 
+      addBtn.addEventListener('click', () => {
+        pendingAction = 'IMPORT';
+        openModal(importModal);
+      });
+
+      // --- GitHub Actions Logic ---
+      const progressModal = document.getElementById('progress-modal')!;
+      const progressBarInner = document.getElementById('progress-bar-inner')!;
+      const progressStatusText = document.getElementById('progress-status-text')!;
+      const progressTitle = document.getElementById('progress-title')!;
+      const refreshPageBtn = document.getElementById('refresh-page-btn') as HTMLButtonElement;
+
+      refreshPageBtn.addEventListener('click', () => window.location.reload());
+
+      async function handleGithubAction(action: string, embedKey: string | null, postId: string | null) {
+        let token = localStorage.getItem(GITHUB_TOKEN_KEY);
+        if (!token) {
+          token = prompt('One-time Setup: Please enter your GitHub Personal Access Token:');
+          if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
+          else return;
+        }
+
+        const repo = 'RossyKenobi/Test.1';
+        try {
+          const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/sync-instagram.yml/dispatches`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `token ${token}`
+            },
+            body: JSON.stringify({ 
+              ref: 'master',
+              inputs: { action, embed_key: embedKey || '', post_id: postId || '' }
+            })
+          });
+
+          if (res.ok || res.status === 204) {
+             startPollingForProgress(token);
+          } else {
+             const err = await res.json();
+             alert(`Failed: ${err.message}`);
+          }
+        } catch (e: any) { alert(`Error: ${e.message}`); }
+      }
+
+      async function startPollingForProgress(token: string) {
+        let startTime = Date.now();
+        openModal(progressModal);
+        progressStatusText.innerText = 'Triggering synchronization...';
+        progressBarInner.style.width = '10%';
+
+        const poll = async () => {
+          try {
+            const res = await fetch(`https://api.github.com/repos/RossyKenobi/Test.1/actions/runs?workflow=sync-instagram.yml&per_page=1`, {
+              headers: { 'Authorization': `token ${token}` }
+            });
+            const data = await res.json();
+            const latestRun = data.workflow_runs[0];
+
+            if (latestRun && new Date(latestRun.created_at).getTime() > startTime - 30000) {
+              const status = latestRun.status;
+              const conclusion = latestRun.conclusion;
+
+              if (status === 'completed') {
+                if (conclusion === 'success') {
+                  progressStatusText.innerText = 'Sync complete. Rebuilding site...';
+                  progressBarInner.style.width = '70%';
+                  // Wait for deploy
+                  setTimeout(pollDeploy, 5000);
+                  return;
+                } else {
+                  progressStatusText.innerText = `Sync failed.`;
+                  return;
+                }
+              }
+              progressStatusText.innerText = `Processing: ${status}...`;
+              progressBarInner.style.width = '40%';
+            }
+            setTimeout(poll, 5000);
+          } catch (e) { setTimeout(poll, 5000); }
+        };
+
+        const pollDeploy = async () => {
+          const res = await fetch(`https://api.github.com/repos/RossyKenobi/Test.1/actions/runs?workflow=deploy.yml&per_page=1`, {
+            headers: { 'Authorization': `token ${token}` }
+          });
+          const data = await res.json();
+          const latestDeploy = data.workflow_runs[0];
+
+          if (latestDeploy && new Date(latestDeploy.created_at).getTime() > startTime) {
+            if (latestDeploy.status === 'completed') {
+              progressBarInner.style.width = '100%';
+              progressStatusText.innerText = 'Success! Website updated.';
+              refreshPageBtn.classList.add('active');
+              return;
+            }
+          }
+          setTimeout(pollDeploy, 5000);
+        };
+
+        poll();
+      }
+
+      // --- Re-initialize Delete Logic for Edit Mode ---
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
@@ -209,172 +489,161 @@ const posts = (postsData || []).map(post => ({
         });
       });
 
-      // Close Buttons
-      document.getElementById('close-password-modal')?.addEventListener('click', () => closeModal(passwordModal));
-      document.getElementById('close-import-modal')?.addEventListener('click', () => closeModal(importModal));
+      // --- PhotoSwipe Carousel Look (Restored & Custom) ---
+      document.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('click', (e) => {
+          if (isEditMode) return;
+          if ((e.target as HTMLElement).closest('.delete-btn')) return;
 
-      // Password Submission
-      document.getElementById('submit-password')?.addEventListener('click', () => {
-        const errorEl = document.getElementById('password-error')!;
-        const contentEl = passwordModal.querySelector('.modal-content')!;
-        
-        if (passwordInput.value === PASSWORD) {
-          errorEl.classList.remove('show');
-          closeModal(passwordModal);
-          if (pendingAction === 'IMPORT') {
-            openModal(importModal);
-          } else if (pendingAction === 'DELETE') {
-            handleGithubAction('DELETE', null, pendingPostId);
-          }
-        } else {
-          errorEl.classList.add('show');
-          contentEl.classList.add('shake');
-          setTimeout(() => contentEl.classList.remove('shake'), 400);
-          passwordInput.value = '';
-          passwordInput.focus();
-        }
-      });
-
-      // Confirm Import
-      document.getElementById('confirm-import')?.addEventListener('click', () => {
-        const embedKey = embedKeyInput.value.trim();
-        if (embedKey) {
-          handleGithubAction('ADD', embedKey, null);
-          closeModal(importModal);
-        }
-      });
-
-      const progressModal = document.getElementById('progress-modal')!;
-      const progressBarInner = document.getElementById('progress-bar-inner')!;
-      const progressStatusText = document.getElementById('progress-status-text')!;
-      const progressTitle = document.getElementById('progress-title')!;
-      const refreshPageBtn = document.getElementById('refresh-page-btn') as HTMLButtonElement;
-
-      refreshPageBtn.addEventListener('click', () => window.location.reload());
-
-      async function startPollingForProgress(token: string) {
-        openModal(progressModal);
-        progressBarInner.style.width = '10%';
-        progressStatusText.innerText = 'Triggering workflow...';
-        refreshPageBtn.classList.remove('active');
-        
-        const repo = 'RossyKenobi/Test.1';
-        let startTime = Date.now();
-        let maxDuration = 300000; // 5 minutes timeout
-
-        const poll = async () => {
-          try {
-            // Phase 1: Wait for Sync Workflow
-            const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=sync-instagram.yml&per_page=1`, {
-              headers: { 'Authorization': `token ${token}` }
-            });
-            const data = await res.json();
-            const latestRun = data.workflow_runs[0];
-
-            if (!latestRun || new Date(latestRun.created_at).getTime() < startTime - 10000) {
-              progressStatusText.innerText = 'Queued in GitHub...';
-              progressBarInner.style.width = '20%';
-            } else {
-              const status = latestRun.status;
-              const conclusion = latestRun.conclusion;
-
-              if (status === 'queued') {
-                progressStatusText.innerText = 'Initializing build...';
-                progressBarInner.style.width = '30%';
-              } else if (status === 'in_progress') {
-                progressStatusText.innerText = 'Extracting Instagram photos...';
-                progressBarInner.style.width = '50%';
-              } else if (status === 'completed') {
-                if (conclusion === 'success') {
-                  // Phase 2: Wait for Deployment Workflow
-                  progressStatusText.innerText = 'Sync complete. Waiting for deployment...';
-                  progressBarInner.style.width = '70%';
-                  
-                  const deployRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=deploy.yml&per_page=1`, {
-                    headers: { 'Authorization': `token ${token}` }
-                  });
-                  const deployData = await deployRes.json();
-                  const latestDeploy = deployData.workflow_runs[0];
-
-                  // Check if this deployment was triggered after our sync finished
-                  if (latestDeploy && new Date(latestDeploy.created_at).getTime() > startTime) {
-                    if (latestDeploy.status === 'completed') {
-                      if (latestDeploy.conclusion === 'success') {
-                        progressBarInner.style.width = '100%';
-                        progressStatusText.innerText = 'Success! Website updated.';
-                        progressTitle.innerText = 'Import Complete';
-                        refreshPageBtn.classList.add('active');
-                        return;
-                      } else {
-                        progressStatusText.innerText = `Deployment failed: ${latestDeploy.conclusion}`;
-                        return;
-                      }
-                    } else {
-                      progressStatusText.innerText = 'Deploying to GitHub Pages...';
-                      progressBarInner.style.width = '85%';
-                    }
+          e.preventDefault();
+          const imagesRaw = wrapper.getAttribute('data-images');
+          const captionStr = wrapper.getAttribute('data-caption');
+          
+          if (imagesRaw) {
+             const imagesArray = JSON.parse(imagesRaw);
+             const pswpItems = imagesArray.map(imgSrc => ({
+               src: imgSrc, width: 0, height: 0, alt: captionStr
+             }));
+             
+             const pswp = new PhotoSwipe({
+               dataSource: pswpItems,
+               padding: { top: 40, bottom: 80, left: 0, right: 0 },
+               mainScrollEnd: true,
+               // @ts-ignore
+               spacing: 0.15
+             });
+             
+             pswp.on('uiRegister', function() {
+                pswp.ui.registerElement({
+                  name: 'custom-caption',
+                  order: 9, isButton: false, appendTo: 'root', html: '',
+                  onInit: (el, pswpInstance) => {
+                    pswpInstance.on('change', () => {
+                      el.innerHTML = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
+                    });
                   }
-                } else {
-                  progressStatusText.innerText = `Sync failed: ${conclusion}`;
-                  setTimeout(() => closeModal(progressModal), 3000);
-                  return;
-                }
-              }
-            }
-
-            if (Date.now() - startTime < maxDuration) {
-              setTimeout(poll, 5000);
-            } else {
-              progressStatusText.innerText = 'Timed out. Please check GitHub Actions manually.';
-              refreshPageBtn.classList.add('active'); // Allow manual refresh anyway
-            }
-          } catch (e) {
-            console.error('Polling error:', e);
-            setTimeout(poll, 5000);
+                });
+             });
+             
+             pswp.on('gettingData', (e) => {
+               const item = e.data;
+               if (item.width > 0) return;
+               const img = new Image();
+               img.onload = () => {
+                 item.width = img.naturalWidth; item.height = img.naturalHeight;
+                 pswp.refreshSlideContent(e.index); pswp.updateSize(true);
+               };
+               img.src = item.src as string;
+             });
+             pswp.init();
           }
-        };
+        });
+      });
 
-        setTimeout(poll, 2000);
-      }
+      // --- Local Upload Logic ---
+      async function handleLocalUpload() {
+        const files = Array.from(fileInput.files || []);
+        const caption = (document.getElementById('local-caption-input') as HTMLTextAreaElement).value;
+        if (files.length === 0) return;
 
-      async function handleGithubAction(action: 'ADD' | 'DELETE', embedKey: string | null, postId: string | null) {
         let token = localStorage.getItem(GITHUB_TOKEN_KEY);
-        if (!token) {
-          token = prompt('One-time Setup: Please enter your GitHub Personal Access Token to authorize updates (this is stored only in your browser):');
-          if (token) {
-            token = token.trim();
-            localStorage.setItem(GITHUB_TOKEN_KEY, token);
-          } else return;
-        }
+        if (!token) return;
+
+        openModal(progressModal);
+        progressStatusText.innerText = 'Uploading images...';
+        progressBarInner.style.width = '10%';
+
+        const repo = 'RossyKenobi/Test.1';
+        const timestamp = new Date().getTime();
+        const postId = `local-${timestamp}`;
+        const imagePaths: string[] = [];
 
         try {
-          const repo = 'RossyKenobi/Test.1'; 
-          const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/sync-instagram.yml/dispatches`, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'Authorization': `token ${token}`
-            },
-            body: JSON.stringify({ 
-              ref: 'master',
-              inputs: {
-                action: action,
-                embed_key: embedKey || '',
-                post_id: postId || ''
-              }
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const content = await fileToBase64(file);
+            const fileName = `p_local_${timestamp}_${i}.jpg`;
+            const path = `public/images/posts/${fileName}`;
+            
+            progressStatusText.innerText = `Uploading image ${i+1}/${files.length}...`;
+            progressBarInner.style.width = `${10 + (i/files.length) * 40}%`;
+
+            await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+              method: 'PUT',
+              headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+              body: JSON.stringify({
+                message: `Upload image ${fileName}`,
+                content: content,
+                branch: 'master'
+              })
+            });
+            imagePaths.push(`/images/posts/${fileName}`);
+          }
+
+          // Now update posts.json
+          progressStatusText.innerText = 'Updating directory...';
+          progressBarInner.style.width = '60%';
+
+          const postsRes = await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+            headers: { 'Authorization': `token ${token}` }
+          });
+          const postsData = await postsRes.json();
+          const existingPosts = JSON.parse(atob(postsData.content));
+          
+          const newPost = {
+            id: postId,
+            caption: caption,
+            timestamp: new Date().toISOString(),
+            images: imagePaths,
+            hidden: false,
+            category: "General"
+          };
+
+          const updatedPosts = [...existingPosts, newPost];
+
+          await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+            body: JSON.stringify({
+              message: `Add local post ${postId}`,
+              content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedPosts, null, 2)))),
+              sha: postsData.sha,
+              branch: 'master'
             })
           });
 
-          if (res.ok || res.status === 204) {
-            startPollingForProgress(token);
-          } else {
-            const err = await res.json();
-            alert(`Failed to start: ${err.message || res.statusText}`);
-          }
+          progressStatusText.innerText = 'Success! Deploying...';
+          progressBarInner.style.width = '100%';
+          refreshPageBtn.classList.add('active');
+
         } catch (e: any) {
-          alert(`Error: ${e.message}`);
+          progressStatusText.innerText = `Error: ${e.message}`;
         }
       }
+
+      function fileToBase64(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = error => reject(error);
+        });
+      }
+
+      // --- Confirm Import (Unified) ---
+      document.getElementById('confirm-import')?.addEventListener('click', () => {
+        const activeTab = document.querySelector('.tab-btn.active')?.getAttribute('data-tab');
+        if (activeTab === 'ig') {
+          const embedKey = (document.getElementById('embed-key-input') as HTMLInputElement).value.trim();
+          if (embedKey) {
+            handleGithubAction('ADD', embedKey, null);
+            closeModal(importModal);
+          }
+        } else {
+          handleLocalUpload();
+          closeModal(importModal);
+        }
+      });
     </script>
   </body>
 </html>

@@ -10,7 +10,7 @@ const thumbnail = images.length > 0 ? images[0] : '';
 const imagesData = JSON.stringify(images);
 ---
 
-<div class="gallery-item-wrapper" data-images={imagesData} data-caption={post.caption || ''}>
+<div class="gallery-item-wrapper" data-id={post.id} data-images={imagesData} data-caption={post.caption || ''}>
   <a href={thumbnail} 
      class="gallery-item" 
      data-pswp-src={thumbnail}>
