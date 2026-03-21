@@ -23,12 +23,22 @@ header {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 2rem 4rem;
+  padding: 2rem 4rem 4rem; /* Extends the blur downwards */
+  background: linear-gradient(to bottom, rgba(10,10,10,0.8) 0%, rgba(10,10,10,0.4) 60%, transparent 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   z-index: 100;
   box-sizing: border-box;
+  pointer-events: none;
+}
+
+.minimal-nav > * {
+  pointer-events: auto;
 }
 
 .nav-brand {
@@ -198,7 +208,17 @@ header {
   cursor: pointer;
 }
 
-/* Hover effect is now exclusively handled by body.is-editing */
+body.is-editing .gallery-item {
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  padding: 12px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+body.is-editing .sortable-ghost .gallery-item {
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
 
 .delete-btn:hover {
   transform: scale(1.1);
@@ -310,10 +330,10 @@ header {
 }
 
 .modal-content {
-  background: rgba(10, 10, 10, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 3rem;
   width: 100%;
   max-width: 440px;
