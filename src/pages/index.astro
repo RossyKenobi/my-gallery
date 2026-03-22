@@ -459,8 +459,13 @@ const posts = (postsData || []).map(post => ({
         const el = document.getElementById('gallery')!;
         sortableInstance = new Sortable(el, {
           animation: 150,
-          ghostClass: 'sortable-ghost'
+          ghostClass: 'sortable-ghost',
+          onEnd: () => {
+             if (typeof resizeAllGridItems === 'function') resizeAllGridItems();
+          }
         });
+        
+        setTimeout(() => { if (typeof resizeAllGridItems === 'function') resizeAllGridItems(); }, 50);
       }
 
       saveBtn.addEventListener('click', async () => {
@@ -484,6 +489,8 @@ const posts = (postsData || []).map(post => ({
         editBtn.classList.remove('hidden');
         editActions.classList.add('hidden');
         if (sortableInstance) sortableInstance.destroy();
+        
+        setTimeout(() => { if (typeof resizeAllGridItems === 'function') resizeAllGridItems(); }, 50);
       }
 
       // --- Modal/Tabs ---
@@ -892,6 +899,33 @@ const posts = (postsData || []).map(post => ({
       document.getElementById('confirm-import')?.addEventListener('click', () => {
         handleLocalUpload();
         closeModal(importModal);
+      });
+
+      // --- Grid Masonry Calculation ---
+      window.resizeGridItem = function(item) {
+        if (!item) return;
+        const target = item.querySelector('.gallery-item');
+        if (!target) return;
+        // Calculate height. Add 64px (4rem) to account for visual gap between items
+        const contentHeight = target.getBoundingClientRect().height;
+        const rowSpan = Math.ceil((contentHeight + 64) / 10);
+        item.style.gridRowEnd = "span " + rowSpan;
+      };
+
+      window.resizeAllGridItems = function() {
+        const allItems = document.querySelectorAll('.gallery-item-wrapper');
+        allItems.forEach(item => window.resizeGridItem(item));
+      };
+
+      window.addEventListener('load', window.resizeAllGridItems);
+      window.addEventListener('resize', window.resizeAllGridItems);
+
+      document.querySelectorAll('.gallery-item img').forEach(img => {
+        if (img.complete) {
+          window.resizeGridItem(img.closest('.gallery-item-wrapper'));
+        } else {
+          img.addEventListener('load', () => window.resizeGridItem(img.closest('.gallery-item-wrapper')));
+        }
       });
     </script>
   </body>

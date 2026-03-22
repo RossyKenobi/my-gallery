@@ -114,33 +114,30 @@ header {
 }
 
 .gallery-grid {
-  columns: 1;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-auto-rows: 10px;
   column-gap: 4rem;
   padding: 4rem 4rem 2rem;
   max-width: 1800px;
   margin: 0 auto;
-  column-fill: balance;
-  -moz-column-fill: balance;
-  -webkit-column-fill: balance;
+  align-items: start;
 }
 
 @media (min-width: 640px) {
-  .gallery-grid { columns: 2; }
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (min-width: 1024px) {
-  .gallery-grid { columns: 3; }
+  .gallery-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (min-width: 1280px) {
-  .gallery-grid { columns: 4; }
+  .gallery-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .gallery-item-wrapper {
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
-  break-inside: avoid-column;
-  margin-bottom: 4rem; /* Moved from .gallery-item to fix SortableJS border size */
+  margin-bottom: 0;
   position: relative;
   display: block;
   width: 100%;
