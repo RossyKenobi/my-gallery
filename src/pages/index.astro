@@ -770,16 +770,117 @@ const posts = (postsData || []).map(post => ({
           }
       });
 
-      confirmMiniGalleryBtn.addEventListener('click', () => {
-          if (currentEditingWrapper) {
-              currentEditingWrapper.setAttribute('data-images', JSON.stringify(currentMiniImages));
-              currentEditingWrapper.setAttribute('data-caption', miniCaptionInput.value);
-              const imgEl = currentEditingWrapper.querySelector('img.gallery-item');
-              if (imgEl && currentMiniImages.length > 0) {
-                  imgEl.setAttribute('src', currentMiniImages[0]);
+      confirmMiniGalleryBtn.addEventListener('click', async () => {
+          if (!currentEditingWrapper) { closeModal(miniGalleryModal); return; }
+
+          const postId = currentEditingWrapper.getAttribute('data-id')!;
+          const newCaption = miniCaptionInput.value;
+          const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || newCaption !== originalMiniCaption;
+
+          if (!hasChanges) { closeModal(miniGalleryModal); return; }
+
+          // Check for new images (data URLs that need uploading)
+          const newDataUrls: { idx: number; dataUrl: string }[] = [];
+          currentMiniImages.forEach((src, idx) => {
+              if (src.startsWith('data:')) {
+                  newDataUrls.push({ idx, dataUrl: src });
               }
+          });
+
+          let token = localStorage.getItem(GITHUB_TOKEN_KEY);
+          if (!token) {
+              token = await promptForToken();
+              if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
+              else return;
           }
+
           closeModal(miniGalleryModal);
+          const repo = 'RossyKenobi/Test.1';
+          const progressTitle = document.getElementById('progress-title')!;
+          progressTitle.innerText = 'Updating Stack...';
+          openModal(progressModal);
+          progressStatusText.innerText = 'Uploading new images...';
+          progressBarInner.style.width = '10%';
+
+          try {
+              const timestamp = Date.now();
+              // Upload new images
+              for (let i = 0; i < newDataUrls.length; i++) {
+                  const { idx, dataUrl } = newDataUrls[i];
+                  const base64Content = dataUrl.split(',')[1];
+                  const fileName = `p_${postId}_add_${timestamp}_${i}.jpg`;
+                  const path = `public/images/posts/${fileName}`;
+
+                  progressStatusText.innerText = `Uploading image ${i + 1}/${newDataUrls.length}...`;
+                  progressBarInner.style.width = `${10 + ((i + 1) / newDataUrls.length) * 40}%`;
+
+                  await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                      method: 'PUT',
+                      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                      body: JSON.stringify({
+                          message: `Upload mini-gallery image ${fileName}`,
+                          content: base64Content,
+                          branch: 'master'
+                      })
+                  });
+
+                  // Replace data URL with the real path
+                  currentMiniImages[idx] = `/images/posts/${fileName}`;
+              }
+
+              // Now update posts.json
+              progressStatusText.innerText = 'Updating gallery data...';
+              progressBarInner.style.width = '60%';
+
+              const postsRes = await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+                  headers: { 'Authorization': `token ${token}` }
+              });
+              const postsData = await postsRes.json();
+              const existingPosts = JSON.parse(utf8Decode(postsData.content));
+
+              const updatedPosts = existingPosts.map((p: any) => {
+                  if (p.id === postId) {
+                      return { ...p, images: [...currentMiniImages], caption: newCaption };
+                  }
+                  return p;
+              });
+
+              await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+                  method: 'PUT',
+                  headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                  body: JSON.stringify({
+                      message: `Update stack ${postId}`,
+                      content: utf8Encode(JSON.stringify(updatedPosts, null, 2)),
+                      sha: postsData.sha,
+                      branch: 'master'
+                  })
+              });
+
+              progressStatusText.innerText = 'Waiting for deploy...';
+              progressBarInner.style.width = '80%';
+
+              const startTime = Date.now();
+              const pollDeploy = async () => {
+                  const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=deploy.yml&per_page=1`, {
+                      headers: { 'Authorization': `token ${token}` }
+                  });
+                  const data = await res.json();
+                  const latestDeploy = data.workflow_runs[0];
+                  if (latestDeploy && new Date(latestDeploy.created_at).getTime() > startTime) {
+                      if (latestDeploy.status === 'completed') {
+                          progressBarInner.style.width = '100%';
+                          progressStatusText.innerText = 'Success! Website updated.';
+                          refreshPageBtn.classList.add('active');
+                          return;
+                      }
+                  }
+                  setTimeout(pollDeploy, 5000);
+              };
+              setTimeout(pollDeploy, 5000);
+
+          } catch (e: any) {
+              progressStatusText.innerText = `Error: ${e.message}`;
+          }
       });
 
       function openMiniGallery(wrapper: HTMLElement) {
