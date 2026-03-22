@@ -54,7 +54,7 @@ const posts = (postsData || []).map(post => ({
           <div id="edit-actions" class="hidden" style="display:flex; gap:1.5rem">
             <button class="action-btn" id="cancel-edits">Cancel</button>
             <button class="action-btn confirm" id="add-new-post">Import</button>
-            <button class="action-btn" id="save-edits">Done</button>
+            <button class="action-btn confirm" id="save-edits">Done</button>
           </div>
         </div>
       </div>
@@ -600,6 +600,8 @@ const posts = (postsData || []).map(post => ({
       const miniCaptionInput = document.getElementById('mini-caption-input') as HTMLTextAreaElement;
       let currentEditingWrapper: HTMLElement | null = null;
       let currentMiniImages: string[] = [];
+      let originalMiniImages: string = "";
+      let originalMiniCaption: string = "";
 
       function renderMiniGallery() {
           miniGalleryGrid.innerHTML = '';
@@ -622,15 +624,13 @@ const posts = (postsData || []).map(post => ({
           });
       }
 
-      if (typeof window.Sortable !== 'undefined') {
-          new window.Sortable(miniGalleryGrid, {
-              animation: 150,
-              onEnd: (evt: any) => {
-                  const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
-                  currentMiniImages.splice(evt.newIndex, 0, el);
-              }
-          });
-      }
+      new Sortable(miniGalleryGrid, {
+          animation: 150,
+          onEnd: (evt: any) => {
+              const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
+              currentMiniImages.splice(evt.newIndex, 0, el);
+          }
+      });
 
       const miniImportBtn = document.getElementById('mini-import-btn')!;
       const miniFileInput = document.getElementById('mini-file-input') as HTMLInputElement;
@@ -650,8 +650,13 @@ const posts = (postsData || []).map(post => ({
       });
 
       closeMiniGalleryBtn.addEventListener('click', () => {
-          pendingAction = 'DISCARD_MINI_GALLERY';
-          openModal(confirmDiscardModal);
+          const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || miniCaptionInput.value !== originalMiniCaption;
+          if (hasChanges) {
+              pendingAction = 'DISCARD_MINI_GALLERY';
+              openModal(confirmDiscardModal);
+          } else {
+              closeModal(miniGalleryModal);
+          }
       });
 
       confirmMiniGalleryBtn.addEventListener('click', () => {
@@ -670,7 +675,9 @@ const posts = (postsData || []).map(post => ({
           currentEditingWrapper = wrapper;
           const imagesRaw = wrapper.getAttribute('data-images') || "[]";
           currentMiniImages = JSON.parse(imagesRaw);
+          originalMiniImages = JSON.stringify(currentMiniImages);
           miniCaptionInput.value = wrapper.getAttribute('data-caption') || "";
+          originalMiniCaption = miniCaptionInput.value;
           renderMiniGallery();
           openModal(miniGalleryModal);
       }
