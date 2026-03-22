@@ -527,8 +527,6 @@ body.is-editing .sortable-ghost .gallery-item {
   border-radius: 8px;
   overflow: hidden;
   cursor: grab;
-  border: 1px dashed transparent;
-  transition: border-color 0.2s;
   box-sizing: border-box;
   background-color: rgba(255,255,255,0.05); /* Visually helps debugging bounds */
 }
@@ -538,8 +536,12 @@ body.is-editing .sortable-ghost .gallery-item {
   display: block;
   pointer-events: none; /* Let the parent capture sortable drags */
 }
-.mini-gallery-item:hover {
-  border-color: rgba(255, 255, 255, 0.4);
+.mini-gallery-item.sortable-ghost {
+  opacity: 0.3;
+}
+.mini-gallery-item.sortable-chosen .mini-delete-btn {
+  opacity: 0 !important;
+  display: none !important;
 }
 .mini-delete-btn {
   position: absolute;
