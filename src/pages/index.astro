@@ -633,7 +633,7 @@ const posts = (postsData || []).map(post => ({
             headers: { 'Authorization': `token ${token}` }
           });
           const postsData = await postsRes.json();
-          const existingPosts = JSON.parse(atob(postsData.content));
+          const existingPosts = JSON.parse(utf8Decode(postsData.content));
           
           let updatedPosts = existingPosts;
           let message = "Update posts.json";
@@ -658,7 +658,7 @@ const posts = (postsData || []).map(post => ({
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             body: JSON.stringify({
               message: message,
-              content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedPosts, null, 2)))),
+              content: utf8Encode(JSON.stringify(updatedPosts, null, 2)),
               sha: postsData.sha,
               branch: 'master'
             })
@@ -921,7 +921,7 @@ const posts = (postsData || []).map(post => ({
             headers: { 'Authorization': `token ${token}` }
           });
           const postsData = await postsRes.json();
-          const existingPosts = JSON.parse(atob(postsData.content));
+          const existingPosts = JSON.parse(utf8Decode(postsData.content));
           
           const newPost = {
             id: postId,
@@ -939,7 +939,7 @@ const posts = (postsData || []).map(post => ({
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             body: JSON.stringify({
               message: `Add local post ${postId}`,
-              content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedPosts, null, 2)))),
+              content: utf8Encode(JSON.stringify(updatedPosts, null, 2)),
               sha: postsData.sha,
               branch: 'master'
             })
@@ -961,6 +961,20 @@ const posts = (postsData || []).map(post => ({
           reader.onload = () => resolve((reader.result as string).split(',')[1]);
           reader.onerror = error => reject(error);
         });
+      }
+
+      // --- UTF-8-safe Base64 helpers ---
+      function utf8Decode(base64: string): string {
+        const binStr = atob(base64);
+        const bytes = Uint8Array.from(binStr, c => c.charCodeAt(0));
+        return new TextDecoder('utf-8').decode(bytes);
+      }
+
+      function utf8Encode(str: string): string {
+        const bytes = new TextEncoder().encode(str);
+        let binStr = '';
+        bytes.forEach(b => binStr += String.fromCharCode(b));
+        return btoa(binStr);
       }
 
       // --- Confirm Import (Unified) ---
