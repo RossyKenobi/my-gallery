@@ -2,5 +2,5 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   output: 'static',
-  base: '/Test.1',
+  base: process.env.VERCEL ? undefined : '/Test.1',
 });

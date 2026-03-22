@@ -137,6 +137,8 @@ header {
   break-inside: avoid;
   margin-bottom: 4rem; /* Moved from .gallery-item to fix SortableJS border size */
   position: relative;
+  display: inline-block;
+  width: 100%;
 }
 
 .gallery-item {
@@ -328,6 +330,7 @@ body.is-editing .sortable-ghost .gallery-item {
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 1000;
   display: flex;
   align-items: center;

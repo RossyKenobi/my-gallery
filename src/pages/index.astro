@@ -185,9 +185,10 @@ const posts = (postsData || []).map(post => ({
         height: 100vh;
         background: rgba(0, 0, 0, 0);
         backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
         z-index: -1;
         pointer-events: none;
-        transition: backdrop-filter 0.1s linear, background 0.1s linear;
+        transition: backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear, background 0.1s linear;
       }
 
       /* --- Edit Mode Styles --- */
@@ -292,6 +293,7 @@ const posts = (postsData || []).map(post => ({
             const opacity = 0.35 + (progress * 0.25);
             heroOverlay.style.background = `rgba(0, 0, 0, ${opacity})`; 
             heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
+            heroOverlay.style.webkitBackdropFilter = `blur(${progress * 20}px)`;
 
             // Progressive Nav Blur
             if (minimalNav) {
@@ -314,6 +316,7 @@ const posts = (postsData || []).map(post => ({
       // Initial trigger
       heroOverlay.style.background = `rgba(0, 0, 0, 0.35)`;
       heroOverlay.style.backdropFilter = `blur(0px)`;
+      heroOverlay.style.webkitBackdropFilter = `blur(0px)`;
 
       // --- Modals & DOM Elements Initialization ---
       const passwordModal = document.getElementById('password-modal')!;
