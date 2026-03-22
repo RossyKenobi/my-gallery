@@ -17,7 +17,7 @@ const posts = (postsData || []).map(post => ({
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Instagram Portfolio</title>
+    <title>Fan's Gallery</title>
     <!-- PhotoSwipe CSS -->
     <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
   </head>
@@ -26,8 +26,9 @@ const posts = (postsData || []).map(post => ({
     <nav class="minimal-nav">
       <div class="nav-brand">F.Y.</div>
       <div class="nav-links">
-        <a href="#gallery" class="nav-link">Work</a>
+        <a href="#gallery" class="nav-link">Works</a>
         <a href="#contact" class="nav-link">Contact</a>
+        <a href="#" id="admin-nav-link" class="nav-link">Admin</a>
       </div>
     </nav>
 
@@ -48,7 +49,7 @@ const posts = (postsData || []).map(post => ({
       ))}
     </main>
 
-    <div class="gallery-bottom-bar">
+    <div class="gallery-bottom-bar" id="gallery-bottom-bar" style="display: none;">
         <div class="edit-controls">
           <button class="action-btn" id="open-edit-mode">Edit</button>
           <div id="edit-actions" class="hidden" style="display:flex; gap:1.5rem">
@@ -354,7 +355,8 @@ const posts = (postsData || []).map(post => ({
       const PASSWORD = 'steveyfff';
       let isEditMode = false;
       let sortableInstance: any = null;
-      let pendingAction: 'IMPORT' | 'DELETE' | 'ENTER_EDIT' | 'REORDER' | 'DISCARD_MINI_GALLERY' | 'DISCARD_EDITS' | null = null;
+      let isAdminLoggedIn = false;
+      let pendingAction: 'IMPORT' | 'DELETE' | 'ENTER_EDIT' | 'REORDER' | 'DISCARD_MINI_GALLERY' | 'DISCARD_EDITS' | 'ADMIN_LOGIN' | null = null;
       let pendingPostId: string | null = null;
       let initialOrder: string[] = [];
 
@@ -363,15 +365,29 @@ const posts = (postsData || []).map(post => ({
       const saveBtn = document.getElementById('save-edits')!;
       const cancelBtn = document.getElementById('cancel-edits')!;
       const addBtn = document.getElementById('add-new-post')!;
+      const adminNavLink = document.getElementById('admin-nav-link')!;
+      const galleryBottomBar = document.getElementById('gallery-bottom-bar')!;
 
       const confirmDiscardModal = document.getElementById('confirm-discard-modal')!;
       const confirmDiscardBtn = document.getElementById('confirm-discard-btn')!;
       const cancelDiscardBtn = document.getElementById('cancel-discard-btn')!;
 
+      adminNavLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (isAdminLoggedIn) {
+          isAdminLoggedIn = false;
+          adminNavLink.textContent = 'Admin';
+          galleryBottomBar.style.display = 'none';
+          if (isEditMode) exitEditMode();
+        } else {
+          pendingAction = 'ADMIN_LOGIN';
+          openModal(passwordModal);
+        }
+      });
+
       editBtn.addEventListener('click', () => {
         if (!isEditMode) {
-          pendingAction = 'ENTER_EDIT';
-          openModal(passwordModal);
+          enterEditMode();
         }
       });
 
@@ -408,7 +424,11 @@ const posts = (postsData || []).map(post => ({
           errorEl.classList.remove('show');
           closeModal(passwordModal);
           
-          if (pendingAction === 'ENTER_EDIT') {
+          if (pendingAction === 'ADMIN_LOGIN') {
+            isAdminLoggedIn = true;
+            adminNavLink.textContent = 'Log Out';
+            galleryBottomBar.style.display = 'flex';
+          } else if (pendingAction === 'ENTER_EDIT') {
             enterEditMode();
           } else if (pendingAction === 'IMPORT') {
             openModal(importModal);
