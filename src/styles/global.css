@@ -101,8 +101,8 @@ header {
 }
 
 .hero-title {
-  font-size: 5vw;
-  font-weight: 300;
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0 0 1rem;
 }
@@ -743,4 +743,27 @@ html {
 
 .refresh-btn.active {
   display: block;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .minimal-nav {
+    padding: 1.5rem 1.5rem 3rem;
+  }
+  .gallery-grid {
+    padding: 2rem 1.5rem 1rem;
+    column-gap: 1.5rem;
+  }
+  .gallery-bottom-bar {
+    padding: 0 1.5rem 1.5rem;
+  }
+  .import-trigger-wrapper {
+    padding: 0 1.5rem 3rem;
+  }
+  .contact-section {
+    padding: 3rem 1.5rem 4rem;
+  }
+  .gallery-item-wrapper {
+    margin-bottom: 2rem;
+  }
 }

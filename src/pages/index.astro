@@ -298,9 +298,9 @@ const posts = (postsData || []).map(post => ({
             // Progressive Nav Blur
             if (minimalNav) {
                 const navProgress = Math.min(scrollY / 150, 1);
-                minimalNav.style.background = `linear-gradient(to bottom, rgba(10,10,10,${navProgress * 0.6}) 0%, rgba(10,10,10,${navProgress * 0.2}) 60%, transparent 100%)`;
-                minimalNav.style.backdropFilter = `blur(${navProgress * 16}px)`;
-                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 16}px)`;
+                minimalNav.style.background = `linear-gradient(to bottom, rgba(14,14,14,${navProgress * 0.98}) 0%, rgba(14,14,14,${navProgress * 0.6}) 40%, transparent 100%)`;
+                minimalNav.style.backdropFilter = `blur(${navProgress * 24}px)`;
+                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 24}px)`;
             }
 
             // Immediate Hero Divider
