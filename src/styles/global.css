@@ -35,14 +35,10 @@ header {
   z-index: 100;
   box-sizing: border-box;
   pointer-events: none;
-  transition: all 0.5s ease;
+  /* Removed CSS transition on background to boost requestAnimationFrame manual scrolling perf */
 }
 
-.minimal-nav.scrolled {
-  background: linear-gradient(to bottom, rgba(10,10,10,0.8) 0%, rgba(10,10,10,0.4) 60%, transparent 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
+/* Removed static .scrolled class as JS now handles progression */
 
 .minimal-nav > * {
   pointer-events: auto;
@@ -499,6 +495,78 @@ body.is-editing .sortable-ghost .gallery-item {
   box-shadow: none;
 }
 
+.embed-wrapper iframe {
+  width: 100% !important;
+  border-radius: 8px !important;
+}
+
+/* Mini Gallery Edit Modal */
+.mini-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+.mini-gallery-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+  border: 1px dashed transparent;
+  transition: border-color 0.2s;
+}
+.mini-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mini-gallery-item:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.mini-delete-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(225, 29, 72, 0.9);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 10;
+  font-size: 16px;
+  line-height: 1;
+}
+.mini-gallery-item:hover .mini-delete-btn {
+  opacity: 1;
+}
+.mini-delete-btn:hover {
+  transform: scale(1.1);
+}
+.mini-caption-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  min-height: 80px;
+  resize: vertical;
+  margin-bottom: 2rem;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
 .embed-item .instagram-media {
   margin: 0 !important;
   max-width: 100% !important;

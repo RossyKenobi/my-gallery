@@ -113,6 +113,23 @@ const posts = (postsData || []).map(post => ({
       </div>
     </div>
 
+    <!-- Mini Gallery Edit Modal -->
+    <div class="modal-overlay" id="mini-gallery-modal">
+      <div class="modal-content" style="max-width: 600px;">
+        <h3 class="modal-title">Edit Stack</h3>
+        <p class="modal-caption" style="margin-bottom: 0;">Drag to reorder, click × to delete</p>
+        <div id="mini-gallery-grid" class="mini-gallery-grid"></div>
+        <textarea id="mini-caption-input" class="mini-caption-textarea" placeholder="Stack caption..."></textarea>
+        <input type="file" id="mini-file-input" multiple accept="image/*" style="display: none;" />
+        <div class="modal-actions" style="margin-top: 0;">
+          <button class="modal-btn" id="close-mini-gallery">Cancel</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="modal-btn" id="mini-import-btn">Import</button>
+            <button class="modal-btn confirm" id="confirm-mini-gallery">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Progress Modal -->
     <div class="modal-overlay" id="progress-modal">
@@ -247,32 +264,38 @@ const posts = (postsData || []).map(post => ({
       heroOverlay.className = 'hero-overlay-blur';
       document.body.prepend(heroOverlay);
 
-      const minimalNav = document.querySelector('.minimal-nav');
-      const heroDivider = document.querySelector('.hero-divider');
+      const minimalNav = document.querySelector('.minimal-nav') as HTMLElement;
+      const heroDivider = document.querySelector('.hero-divider') as HTMLElement;
+      let isTicking = false;
 
       window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        const viewportHeight = window.innerHeight;
-        
-        // Cap the progress so it doesn't get completely dark
-        const progress = Math.min(scrollY / (viewportHeight * 0.8), 1);
-        
-        // Start brightness at 0.35 opacity and go up to 0.60
-        const opacity = 0.35 + (progress * 0.25);
-        
-        heroOverlay.style.background = `rgba(0, 0, 0, ${opacity})`; 
-        heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+            const viewportHeight = window.innerHeight;
+            
+            // Hero background darken
+            const progress = Math.min(scrollY / (viewportHeight * 0.8), 1);
+            const opacity = 0.35 + (progress * 0.25);
+            heroOverlay.style.background = `rgba(0, 0, 0, ${opacity})`; 
+            heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
 
-        // Handle Nav Blur visibility
-        if (minimalNav) {
-            if (scrollY > 50) minimalNav.classList.add('scrolled');
-            else minimalNav.classList.remove('scrolled');
-        }
+            // Progressive Nav Blur
+            if (minimalNav) {
+                const navProgress = Math.min(scrollY / 150, 1);
+                minimalNav.style.background = `linear-gradient(to bottom, rgba(10,10,10,${navProgress * 0.6}) 0%, rgba(10,10,10,${navProgress * 0.2}) 60%, transparent 100%)`;
+                minimalNav.style.backdropFilter = `blur(${navProgress * 16}px)`;
+                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 16}px)`;
+            }
 
-        // Handle Hero Divider visibility
-        if (heroDivider) {
-            if (scrollY > viewportHeight * 0.5) heroDivider.classList.add('visible');
-            else heroDivider.classList.remove('visible');
+            // Immediate Hero Divider
+            if (heroDivider) {
+                if (scrollY > 20) heroDivider.classList.add('visible');
+                else heroDivider.classList.remove('visible');
+            }
+            isTicking = false;
+          });
+          isTicking = true;
         }
       });
       // Initial trigger
@@ -527,12 +550,99 @@ const posts = (postsData || []).map(post => ({
       });
 
       // --- PhotoSwipe Carousel Look (Restored & Custom) ---
+      // --- Gallery Interactions & Mini-Gallery Modal ---
+      const miniGalleryModal = document.getElementById('mini-gallery-modal')!;
+      const closeMiniGalleryBtn = document.getElementById('close-mini-gallery')!;
+      const confirmMiniGalleryBtn = document.getElementById('confirm-mini-gallery')!;
+      const miniGalleryGrid = document.getElementById('mini-gallery-grid')!;
+      const miniCaptionInput = document.getElementById('mini-caption-input') as HTMLTextAreaElement;
+      let currentEditingWrapper: HTMLElement | null = null;
+      let currentMiniImages: string[] = [];
+
+      function renderMiniGallery() {
+          miniGalleryGrid.innerHTML = '';
+          currentMiniImages.forEach((src, idx) => {
+              const div = document.createElement('div');
+              div.className = 'mini-gallery-item';
+              div.innerHTML = `
+                  <img src="${src}" alt="img ${idx}" />
+                  <button class="mini-delete-btn" data-idx="${idx}">×</button>
+              `;
+              miniGalleryGrid.appendChild(div);
+          });
+          
+          miniGalleryGrid.querySelectorAll('.mini-delete-btn').forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                  const idx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-idx')!);
+                  currentMiniImages.splice(idx, 1);
+                  renderMiniGallery();
+              });
+          });
+      }
+
+      if (typeof window.Sortable !== 'undefined') {
+          new window.Sortable(miniGalleryGrid, {
+              animation: 150,
+              onEnd: (evt: any) => {
+                  const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
+                  currentMiniImages.splice(evt.newIndex, 0, el);
+              }
+          });
+      }
+
+      const miniImportBtn = document.getElementById('mini-import-btn')!;
+      const miniFileInput = document.getElementById('mini-file-input') as HTMLInputElement;
+
+      miniImportBtn.addEventListener('click', () => miniFileInput.click());
+      miniFileInput.addEventListener('change', (e) => {
+          const files = (e.target as HTMLInputElement).files;
+          if (!files) return;
+          Array.from(files).forEach(file => {
+             const reader = new FileReader();
+             reader.onload = (re) => {
+                 currentMiniImages.push(re.target!.result as string);
+                 renderMiniGallery();
+             };
+             reader.readAsDataURL(file);
+          });
+      });
+
+      closeMiniGalleryBtn.addEventListener('click', () => {
+          closeModal(miniGalleryModal);
+      });
+
+      confirmMiniGalleryBtn.addEventListener('click', () => {
+          if (currentEditingWrapper) {
+              currentEditingWrapper.setAttribute('data-images', JSON.stringify(currentMiniImages));
+              currentEditingWrapper.setAttribute('data-caption', miniCaptionInput.value);
+              const imgEl = currentEditingWrapper.querySelector('img.gallery-item');
+              if (imgEl && currentMiniImages.length > 0) {
+                  imgEl.setAttribute('src', currentMiniImages[0]);
+              }
+          }
+          closeModal(miniGalleryModal);
+      });
+
+      function openMiniGallery(wrapper: HTMLElement) {
+          currentEditingWrapper = wrapper;
+          const imagesRaw = wrapper.getAttribute('data-images') || "[]";
+          currentMiniImages = JSON.parse(imagesRaw);
+          miniCaptionInput.value = wrapper.getAttribute('data-caption') || "";
+          renderMiniGallery();
+          openModal(miniGalleryModal);
+      }
+
       document.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
         wrapper.addEventListener('click', (e) => {
-          if (isEditMode) return;
-          if ((e.target as HTMLElement).closest('.delete-btn')) return;
+          if (document.body.classList.contains('is-editing')) {
+              if ((e.target as HTMLElement).closest('.delete-btn')) return; // Ignore outer delete button
+              e.preventDefault();
+              e.stopPropagation();
+              openMiniGallery(wrapper as HTMLElement);
+              return;
+          }
 
-          e.preventDefault();
+          if (document.body.classList.contains('is-swiping')) return;
           const imagesRaw = wrapper.getAttribute('data-images');
           const captionStr = wrapper.getAttribute('data-caption');
           
@@ -557,7 +667,7 @@ const posts = (postsData || []).map(post => ({
                  if(window.innerWidth <= 768) return; 
                  if(!pswp.currSlide || !pswp.currSlide.data || !pswp.currSlide.data.width) return;
                  const ratio = pswp.currSlide.data.width / pswp.currSlide.data.height;
-                 let newSpacing = -0.35; // Default for landscape
+                 let newSpacing = -0.40; // Default for landscape
                  if (ratio < 0.8) newSpacing = -0.65; // Pull severely for portraits
                  else if (ratio < 1.2) newSpacing = -0.45; // Pull moderately for squares
 
