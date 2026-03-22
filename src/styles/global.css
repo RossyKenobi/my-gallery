@@ -398,6 +398,11 @@ body.is-editing .sortable-ghost .gallery-item {
   border-bottom-color: rgba(255,255,255,0.8);
 }
 
+.modal-input:focus, .mini-caption-textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
 .modal-actions {
   display: flex;
   justify-content: center;
@@ -513,11 +518,12 @@ body.is-editing .sortable-ghost .gallery-item {
   max-height: 50vh;
   overflow-y: auto;
   padding: 1rem 0;
+  align-items: start;
 }
 .mini-gallery-item {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  height: max-content;
   border-radius: 8px;
   overflow: hidden;
   cursor: grab;
@@ -527,12 +533,9 @@ body.is-editing .sortable-ghost .gallery-item {
   background-color: rgba(255,255,255,0.05); /* Visually helps debugging bounds */
 }
 .mini-gallery-item img {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
   pointer-events: none; /* Let the parent capture sortable drags */
 }
 .mini-gallery-item:hover {
@@ -577,6 +580,10 @@ body.is-editing .sortable-ghost .gallery-item {
   margin-bottom: 2rem;
   border-radius: 4px;
   box-sizing: border-box;
+}
+.mini-caption-textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 .embed-item .instagram-media {
   margin: 0 !important;

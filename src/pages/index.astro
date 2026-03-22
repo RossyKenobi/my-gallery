@@ -53,8 +53,8 @@ const posts = (postsData || []).map(post => ({
           <button class="action-btn" id="open-edit-mode">Edit</button>
           <div id="edit-actions" class="hidden" style="display:flex; gap:1.5rem">
             <button class="action-btn" id="cancel-edits">Cancel</button>
-            <button class="action-btn" id="save-edits">Done</button>
             <button class="action-btn confirm" id="add-new-post">Import</button>
+            <button class="action-btn" id="save-edits">Done</button>
           </div>
         </div>
       </div>
@@ -106,8 +106,8 @@ const posts = (postsData || []).map(post => ({
             </div>
             <input type="file" id="local-file-input" class="modal-input" multiple accept="image/*" style="display: none;" />
             
-            <label class="modal-caption" style="margin-top: 1rem; margin-bottom: 1.5rem; display: block;">ADD A CAPTION</label>
-            <textarea id="local-caption-input" class="modal-input" placeholder="" style="margin-bottom: 3rem; text-align: left; padding: 0.5rem 0; width: 100%;"></textarea>
+            <label class="modal-caption" style="margin-top: 1rem; margin-bottom: 0.5rem; display: block;">ADD A CAPTION</label>
+            <input type="text" id="local-caption-input" class="modal-input" placeholder="" style="margin-bottom: 2rem; text-align: left; padding: 0.5rem 0; width: 100%;" />
           </div>
         </div>
 
@@ -330,12 +330,16 @@ const posts = (postsData || []).map(post => ({
 
       const openModal = (modal: HTMLElement) => {
         modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
       };
       const closeModal = (modal: HTMLElement) => {
         modal.classList.remove('active');
         if (passwordInput) passwordInput.value = '';
         if (embedKeyInput) embedKeyInput.value = '';
         if (preview) preview.innerHTML = '';
+        if (!document.querySelector('.modal-overlay.active')) {
+          document.body.style.overflow = '';
+        }
       };
 
       document.getElementById('close-password-modal')?.addEventListener('click', () => closeModal(passwordModal));
@@ -347,7 +351,7 @@ const posts = (postsData || []).map(post => ({
       const PASSWORD = 'steveyfff';
       let isEditMode = false;
       let sortableInstance: any = null;
-      let pendingAction: 'IMPORT' | 'DELETE' | 'ENTER_EDIT' | 'REORDER' | null = null;
+      let pendingAction: 'IMPORT' | 'DELETE' | 'ENTER_EDIT' | 'REORDER' | 'DISCARD_MINI_GALLERY' | 'DISCARD_EDITS' | null = null;
       let pendingPostId: string | null = null;
       let initialOrder: string[] = [];
 
@@ -369,11 +373,18 @@ const posts = (postsData || []).map(post => ({
       });
 
       cancelBtn.addEventListener('click', () => {
+        pendingAction = 'DISCARD_EDITS';
         openModal(confirmDiscardModal);
       });
 
       confirmDiscardBtn.addEventListener('click', () => {
-        window.location.reload();
+        if (pendingAction === 'DISCARD_MINI_GALLERY') {
+            closeModal(confirmDiscardModal);
+            closeModal(miniGalleryModal);
+            pendingAction = null;
+        } else {
+            window.location.reload();
+        }
       });
 
       cancelDiscardBtn.addEventListener('click', () => {
@@ -639,7 +650,8 @@ const posts = (postsData || []).map(post => ({
       });
 
       closeMiniGalleryBtn.addEventListener('click', () => {
-          closeModal(miniGalleryModal);
+          pendingAction = 'DISCARD_MINI_GALLERY';
+          openModal(confirmDiscardModal);
       });
 
       confirmMiniGalleryBtn.addEventListener('click', () => {
@@ -742,7 +754,7 @@ const posts = (postsData || []).map(post => ({
       // --- Local Upload Logic ---
       async function handleLocalUpload() {
         const files = Array.from(fileInput.files || []);
-        const caption = (document.getElementById('local-caption-input') as HTMLTextAreaElement).value;
+        const caption = (document.getElementById('local-caption-input') as HTMLInputElement).value;
         if (files.length === 0) return;
 
         let token = localStorage.getItem(GITHUB_TOKEN_KEY);
