@@ -728,15 +728,131 @@ const posts = (postsData || []).map(post => ({
           
           miniGalleryGrid.querySelectorAll('.mini-delete-btn').forEach(btn => {
               btn.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const idx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-idx')!);
-                  currentMiniImages.splice(idx, 1);
-                  renderMiniGallery();
+                  pendingMiniDeleteIdx = idx;
+                  // Show confirmation using the delete modal
+                  const confirmDeleteModal = document.getElementById('confirm-delete-modal')!;
+                  const titleEl = confirmDeleteModal.querySelector('.modal-title')!;
+                  const captionEl = confirmDeleteModal.querySelector('.modal-caption')!;
+                  titleEl.textContent = 'Delete Image';
+                  captionEl.textContent = 'Are you sure you want to remove this image from the stack?';
+                  openModal(confirmDeleteModal);
               });
           });
       }
 
+      let pendingMiniDeleteIdx: number | null = null;
+
+      // Override confirm-delete-btn to handle both stack delete and mini-gallery image delete
+      const origConfirmDeleteBtn = document.getElementById('confirm-delete-btn')!;
+      const newConfirmDeleteBtn = origConfirmDeleteBtn.cloneNode(true) as HTMLElement;
+      origConfirmDeleteBtn.parentNode!.replaceChild(newConfirmDeleteBtn, origConfirmDeleteBtn);
+
+      newConfirmDeleteBtn.addEventListener('click', async () => {
+          const confirmDeleteModal = document.getElementById('confirm-delete-modal')!;
+          closeModal(confirmDeleteModal);
+
+          if (pendingMiniDeleteIdx !== null) {
+              // Mini-gallery image deletion
+              const idx = pendingMiniDeleteIdx;
+              pendingMiniDeleteIdx = null;
+              currentMiniImages.splice(idx, 1);
+              renderMiniGallery();
+
+              // Immediately sync to GitHub
+              if (currentEditingWrapper) {
+                  const postId = currentEditingWrapper.getAttribute('data-id')!;
+                  let token = localStorage.getItem(GITHUB_TOKEN_KEY);
+                  if (!token) {
+                      token = await promptForToken();
+                      if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
+                      else return;
+                  }
+
+                  closeModal(miniGalleryModal);
+                  const repo = 'RossyKenobi/Test.1';
+                  const progressTitle = document.getElementById('progress-title')!;
+                  progressTitle.innerText = 'Removing Image...';
+                  openModal(progressModal);
+                  progressStatusText.innerText = 'Updating gallery data...';
+                  progressBarInner.style.width = '40%';
+
+                  try {
+                      const postsRes = await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+                          headers: { 'Authorization': `token ${token}` }
+                      });
+                      const postsData = await postsRes.json();
+                      const existingPosts = JSON.parse(utf8Decode(postsData.content));
+
+                      const updatedPosts = existingPosts.map((p: any) => {
+                          if (p.id === postId) {
+                              return { ...p, images: [...currentMiniImages] };
+                          }
+                          return p;
+                      });
+
+                      await fetch(`https://api.github.com/repos/${repo}/contents/src/data/posts.json`, {
+                          method: 'PUT',
+                          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                          body: JSON.stringify({
+                              message: `Remove image from stack ${postId}`,
+                              content: utf8Encode(JSON.stringify(updatedPosts, null, 2)),
+                              sha: postsData.sha,
+                              branch: 'master'
+                          })
+                      });
+
+                      progressBarInner.style.width = '80%';
+                      progressStatusText.innerText = 'Waiting for deploy...';
+
+                      const startTime = Date.now();
+                      const pollDeploy = async () => {
+                          const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?workflow=deploy.yml&per_page=1`, {
+                              headers: { 'Authorization': `token ${token}` }
+                          });
+                          const data = await res.json();
+                          const latestDeploy = data.workflow_runs[0];
+                          if (latestDeploy && new Date(latestDeploy.created_at).getTime() > startTime) {
+                              if (latestDeploy.status === 'completed') {
+                                  progressBarInner.style.width = '100%';
+                                  progressStatusText.innerText = 'Success! Website updated.';
+                                  refreshPageBtn.classList.add('active');
+                                  return;
+                              }
+                          }
+                          setTimeout(pollDeploy, 5000);
+                      };
+                      setTimeout(pollDeploy, 5000);
+                  } catch (e: any) {
+                      progressStatusText.innerText = `Error: ${e.message}`;
+                  }
+              }
+          } else if (pendingPostId) {
+              // Full stack deletion (existing logic)
+              handleDirectAction('DELETE', pendingPostId);
+              pendingPostId = null;
+          }
+      });
+
+      const origCancelDeleteBtn = document.getElementById('cancel-delete-btn')!;
+      const newCancelDeleteBtn = origCancelDeleteBtn.cloneNode(true) as HTMLElement;
+      origCancelDeleteBtn.parentNode!.replaceChild(newCancelDeleteBtn, origCancelDeleteBtn);
+      newCancelDeleteBtn.addEventListener('click', () => {
+          pendingMiniDeleteIdx = null;
+          pendingPostId = null;
+          closeModal(document.getElementById('confirm-delete-modal')!);
+          // Restore modal text for next use
+          const confirmDeleteModal = document.getElementById('confirm-delete-modal')!;
+          confirmDeleteModal.querySelector('.modal-title')!.textContent = 'Delete Stack';
+          confirmDeleteModal.querySelector('.modal-caption')!.textContent = 'Are you sure you want to delete this stack? This action cannot be undone.';
+      });
+
       new Sortable(miniGalleryGrid, {
           animation: 150,
+          filter: '.mini-delete-btn',
+          preventOnFilter: false,
           onEnd: (evt: any) => {
               const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
               currentMiniImages.splice(evt.newIndex, 0, el);
