@@ -23,7 +23,7 @@ header {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 2.5rem 4rem 1.5rem; 
+  padding: 3rem 4rem 2rem; /* Adjusted for larger fonts */
   background: transparent;
   display: flex;
   justify-content: space-between;
@@ -32,13 +32,15 @@ header {
   box-sizing: border-box;
   pointer-events: none;
   transition: background-color 0.4s ease, backdrop-filter 0.4s ease, -webkit-backdrop-filter 0.4s ease;
+  /* Soft transition mask to avoid hard edges */
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
 }
 
 .minimal-nav.is-scrolled {
-  background-color: rgba(14, 14, 14, 0.4);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.5); /* 50% transparent neutral glass */
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   pointer-events: auto;
 }
 
@@ -49,10 +51,11 @@ header {
 }
 
 .nav-brand {
-  font-weight: 800;
-  font-size: 1.25rem;
-  letter-spacing: 0.1em;
+  font-weight: 600;
+  font-size: 1.5rem; /* Larger brand */
+  letter-spacing: 0.15em;
   color: #fff;
+  line-height: 1;
 }
 
 .nav-links {
@@ -63,10 +66,11 @@ header {
 .nav-link {
   color: #fff;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 1rem; /* Larger links */
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
   transition: opacity 0.3s ease;
 }
 
