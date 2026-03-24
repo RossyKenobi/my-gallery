@@ -54,7 +54,7 @@ npm run build
 
 To use the **In-Browser Admin UI**:
 1. Click **Admin** in the navigation bar.
-2. Login using your configured local password (default: `steveyfff`).
+2. Login using your configured local password (set by admin).
 3. Enter your **GitHub Personal Access Token** (PAT) when prompted to authorize site updates.
 
 ---
