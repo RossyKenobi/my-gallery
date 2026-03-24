@@ -19,22 +19,25 @@ header {
 
 /* Minimalist Navigation */
 .minimal-nav {
-  position: fixed; /* Keep top bar fixed */
-  top: 0;
+  position: fixed;
+  /* Oversampling fix: Push top edge off-screen to eliminate the filter 'black edge' */
+  top: -5rem; 
   left: 0;
   width: 100%;
-  padding: 3rem 4rem 2rem; /* Adjusted for larger fonts */
+  /* Balanced visible padding (1.25rem top/bottom) for perfect centering */
+  padding: calc(5rem + 1.25rem) 4rem 1.25rem; 
   background: transparent;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center; /* 1. Center text vertically in the bar */
   z-index: 100;
   box-sizing: border-box;
   pointer-events: none;
   transition: background-color 0.4s ease, backdrop-filter 0.4s ease, -webkit-backdrop-filter 0.4s ease;
-  /* Soft transition mask to avoid hard edges */
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  
+  /* Original Mask Logic: Adjusted to account for the -5rem offset */
+  -webkit-mask-image: linear-gradient(to bottom, black 0, black 65%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0, black 65%, transparent 100%);
 }
 
 .minimal-nav.is-scrolled {
