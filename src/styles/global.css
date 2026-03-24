@@ -21,29 +21,31 @@ header {
 .minimal-nav {
   position: fixed;
   /* Oversampling fix: Push top edge off-screen to eliminate the filter 'black edge' */
-  top: -5rem; 
+  top: -6rem; 
   left: 0;
   width: 100%;
-  /* Balanced visible padding (1.25rem top/bottom) for perfect centering */
-  padding: calc(5rem + 1.25rem) 4rem 1.25rem; 
+  /* Shifted down: 2.5rem top padding, 2rem bottom. Total wider bar. */
+  padding: calc(6rem + 2.5rem) 4rem 2rem; 
   background: transparent;
   display: flex;
   justify-content: space-between;
-  align-items: center; /* 1. Center text vertically in the bar */
+  align-items: center; 
   z-index: 100;
   box-sizing: border-box;
   pointer-events: none;
-  transition: background-color 0.4s ease, backdrop-filter 0.4s ease, -webkit-backdrop-filter 0.4s ease;
+  /* Fix Safari white flash: Remove backdrop-filter from transition. */
+  transition: background-color 0.5s ease;
+  will-change: background-color, backdrop-filter;
   
-  /* Original Mask Logic: Adjusted to account for the -5rem offset */
-  -webkit-mask-image: linear-gradient(to bottom, black 0, black 65%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 0, black 65%, transparent 100%);
+  /* Precision mask: Stay solid through the content, then fade smoothly. */
+  -webkit-mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
 }
 
 .minimal-nav.is-scrolled {
-  background-color: rgba(0, 0, 0, 0.5); /* 50% transparent neutral glass */
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background-color: rgba(0, 0, 0, 0.6); /* More obvious 60% background */
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
   pointer-events: auto;
 }
 
@@ -54,8 +56,8 @@ header {
 }
 
 .nav-brand {
-  font-weight: 600;
-  font-size: 1.5rem; /* Larger brand */
+  font-weight: 700;
+  font-size: 1.75rem; /* Even larger and bolder */
   letter-spacing: 0.15em;
   color: #fff;
   line-height: 1;
@@ -69,11 +71,11 @@ header {
 .nav-link {
   color: #fff;
   text-decoration: none;
-  font-size: 1rem; /* Larger links */
-  font-weight: 500;
+  font-size: 1.1rem; /* More prominent links */
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  opacity: 0.8;
+  opacity: 0.9;
   transition: opacity 0.3s ease;
 }
 
