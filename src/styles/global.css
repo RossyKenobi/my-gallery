@@ -7,7 +7,7 @@
 
 body {
   margin: 0;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Montserrat', sans-serif;
   background-color: transparent; /* Allow fixed hero image to show through */
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
@@ -17,35 +17,26 @@ header {
   display: none; /* Removed the old header */
 }
 
-/* Minimalist Navigation */
+/* Minimalist Navigation - Reverted to Original State */
 .minimal-nav {
-  position: fixed;
-  /* Oversampling fix: Push top edge off-screen to eliminate the filter 'black edge' */
-  top: -6rem; 
+  position: fixed; /* Keep top bar fixed */
+  top: 0;
   left: 0;
   width: 100%;
-  /* Shifted down: 2.5rem top padding, 2rem bottom. Total wider bar. */
-  padding: calc(6rem + 2.5rem) 4rem 2rem; 
+  padding: 2rem 4rem; 
   background: transparent;
   display: flex;
   justify-content: space-between;
-  align-items: center; 
+  align-items: flex-start;
   z-index: 100;
   box-sizing: border-box;
   pointer-events: none;
-  /* Fix Safari white flash: Remove backdrop-filter from transition. */
-  transition: background-color 0.5s ease;
-  will-change: background-color, backdrop-filter;
-  
-  /* Precision mask: Stay solid through the content, then fade smoothly. */
-  -webkit-mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
 }
 
 .minimal-nav.is-scrolled {
-  background-color: rgba(0, 0, 0, 0.6); /* More obvious 60% background */
-  backdrop-filter: blur(26px) saturate(160%);
-  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   pointer-events: auto;
 }
 
@@ -57,10 +48,9 @@ header {
 
 .nav-brand {
   font-weight: 700;
-  font-size: 1.75rem; /* Even larger and bolder */
-  letter-spacing: 0.15em;
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
   color: #fff;
-  line-height: 1;
 }
 
 .nav-links {
@@ -71,11 +61,10 @@ header {
 .nav-link {
   color: #fff;
   text-decoration: none;
-  font-size: 1.1rem; /* More prominent links */
-  font-weight: 600;
+  font-size: 0.9rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.9;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
   transition: opacity 0.3s ease;
 }
 
@@ -114,10 +103,13 @@ header {
 }
 
 .hero-title {
-  font-size: clamp(2.5rem, 6.5vw, 5rem);
-  font-weight: 600;
+  font-size: clamp(3rem, 10vw, 8rem);
+  width: 50vw; /* Occupy half the screen width */
+  margin: 0 auto 1rem;
+  line-height: 1.1;
+  font-weight: 900;
+  text-transform: uppercase;
   letter-spacing: -0.02em;
-  margin: 0 0 1rem;
 }
 
 .hero-subtitle {
