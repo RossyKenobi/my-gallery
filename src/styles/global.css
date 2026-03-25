@@ -335,9 +335,13 @@ body.is-editing .sortable-ghost .gallery-item {
 }
 
 .hero-divider {
-  margin-bottom: 4rem;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: opacity 0.8s ease, bottom 0.3s ease;
 }
 
 .hero-divider.visible {
@@ -740,8 +744,9 @@ html {
 
   /* Target the divider very aggressively */
   body .hero-divider {
-    bottom: 180px !important; /* Move line very high to reach the red-line position */
-    background: rgba(255, 255, 255, 0.3) !important; /* Make it more visible */
+    bottom: 180px !important; /* Strictly align with user's red line */
+    background: rgba(255, 255, 255, 0.4) !important; /* More contrast */
+    opacity: 1 !important; /* Force visibility */
   }
 
   .hero-title {
@@ -756,7 +761,8 @@ html {
   }
 
   .scroll-indicator {
-    bottom: 210px !important; /* Keep arrow above the new divider position */
+    bottom: 215px !important; /* Arrow tip sits just above the line */
+    z-index: 11;
   }
 
   .contact-email a {
