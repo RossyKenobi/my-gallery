@@ -51,8 +51,8 @@ header {
 }
 
 .nav-brand {
-  font-weight: 500;
-  font-size: 1rem; /* Reduced from 1.1rem */
+  font-weight: 700; /* Increased to Bold */
+  font-size: 1rem;
   letter-spacing: 0.15em;
   color: #fff;
   line-height: 1;
@@ -118,7 +118,7 @@ header {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(3.5rem, 8vw, 10rem); /* Massive editorial scale */
   width: 50vw; /* Occupy half the screen width */
-  margin: 0 auto 0.5rem; /* Reduced from 1.5rem to match Figure 1 */
+  margin: 0 auto 0.2rem; /* Further reduced from 0.5rem */
   line-height: 1;
   font-weight: 700;
   text-transform: none;
@@ -153,9 +153,9 @@ header {
 }
 
 .scroll-arrow {
-  width: 14px;
-  height: 14px;
-  margin-top: 0.5rem;
+  width: 20px; /* Increased from 14px */
+  height: 20px; /* Increased from 14px */
+  margin-top: 0.8rem; /* Increased margin for better spacing */
   animation: scroll-slide 2s infinite ease-in-out;
 }
 
