@@ -134,28 +134,34 @@ header {
   opacity: 0.8;
 }
 
-/* Scroll Indicator - 1:1 Match Figure 1 */
+/* Scroll Indicator - Text-in-middle design */
 .scroll-indicator {
   position: absolute;
-  bottom: 1.5rem; /* Closer to bottom edge */
+  bottom: 3rem; 
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem; /* Tighter gap */
+  gap: 0.4rem;
   font-family: 'Montserrat', sans-serif;
-  letter-spacing: 0.4em;
-  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  font-size: 0.7rem;
   font-weight: 500;
-  color: #c5a059; /* Premium Gold/Brass color from design */
+  color: rgba(255, 255, 255, 0.6); /* Reverted to light gray */
   pointer-events: none;
 }
 
-.scroll-arrow {
-  width: 24px;
-  height: 80px; /* Long stem as requested */
-  margin-top: 0.5rem;
+.scroll-stem-top, .scroll-stem-bottom {
+  width: 1px;
+  height: 14px; /* Total ~28px, 1/3 of previous 80px */
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.scroll-tip {
+  width: 16px; /* Sides ~14px (1/2 of stem) */
+  height: 12px;
+  margin-top: -0.2rem;
   animation: scroll-slide 2s infinite ease-in-out;
 }
 
