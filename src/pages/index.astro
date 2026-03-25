@@ -342,9 +342,9 @@ const posts = (postsData || []).map(post => ({
                 const navTransitionThreshold = viewportHeight * 0.66; // Full effect only by 2/3 page
                 const navProgress = Math.min(scrollY / navTransitionThreshold, 1);
                 
-                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.35})`; // Reduced from 0.5
-                minimalNav.style.backdropFilter = `blur(${navProgress * 10}px)`; // Reduced from 20px
-                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 10}px)`; // Reduced from 20px
+                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.3})`; // Reduced from 0.35
+                minimalNav.style.backdropFilter = `blur(${navProgress * 10}px)`; 
+                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 10}px)`; 
                 
                 if (scrollY > 50) {
                     minimalNav.classList.add('is-scrolled');

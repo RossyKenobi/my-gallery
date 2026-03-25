@@ -768,9 +768,14 @@ html {
 
   .gallery-grid {
     padding-top: 1.5rem !important; 
-    margin-top: -65px !important; /* Pull the gallery up to reduce the overall gap drastically */
+    padding-bottom: 4rem !important; /* Balanced with contact header below */
+    margin-top: -65px !important; 
     position: relative;
     z-index: 5;
+  }
+
+  .contact-section {
+    padding-top: 4rem !important; /* Balanced gap with the line above */
   }
 
   .contact-email a {
