@@ -134,7 +134,7 @@ header {
   opacity: 0.8;
 }
 
-/* Scroll Indicator - Text-in-middle design */
+/* Scroll Indicator - Simplified Wide Design */
 .scroll-indicator {
   position: absolute;
   bottom: 3rem; 
@@ -143,26 +143,20 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.8rem; /* Space between text and arrow */
   font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.3em;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.6); /* Reverted to light gray */
+  color: rgba(255, 255, 255, 0.6);
   pointer-events: none;
 }
 
-.scroll-stem-top, .scroll-stem-bottom {
-  width: 1px;
-  height: 14px; /* Total ~28px, 1/3 of previous 80px */
-  background: rgba(255, 255, 255, 0.4);
-}
-
-.scroll-tip {
-  width: 16px; /* Sides ~14px (1/2 of stem) */
-  height: 12px;
-  margin-top: -0.2rem;
-  animation: scroll-slide 2s infinite ease-in-out;
+.scroll-arrow-full {
+  width: 40px;
+  height: 40px;
+  opacity: 0.6;
+  /* Animation removed as requested */
 }
 
 @keyframes scroll-slide {
