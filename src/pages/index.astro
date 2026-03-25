@@ -337,12 +337,14 @@ const posts = (postsData || []).map(post => ({
             heroOverlay.style.backdropFilter = `blur(${progress * 20}px)`;
             heroOverlay.style.webkitBackdropFilter = `blur(${progress * 20}px)`;
 
-            // 2. Gradual Nav Blur (Fixed mapping for smooth transition)
+            // 2. Gradual Nav Blur (Subtler & Slower Transition)
             if (minimalNav) {
-                const navProgress = Math.min(scrollY / 150, 1); // Full effect by 150px
-                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.5})`;
-                minimalNav.style.backdropFilter = `blur(${navProgress * 20}px)`;
-                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 20}px)`;
+                const navTransitionThreshold = viewportHeight * 0.66; // Full effect only by 2/3 page
+                const navProgress = Math.min(scrollY / navTransitionThreshold, 1);
+                
+                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.35})`; // Reduced from 0.5
+                minimalNav.style.backdropFilter = `blur(${navProgress * 10}px)`; // Reduced from 20px
+                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 10}px)`; // Reduced from 20px
                 
                 if (scrollY > 50) {
                     minimalNav.classList.add('is-scrolled');
