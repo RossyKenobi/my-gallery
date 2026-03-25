@@ -134,16 +134,16 @@ header {
   opacity: 0.8;
 }
 
-/* Scroll Indicator - Simplified Wide Design */
+/* Scroll Indicator - Final Adjustments */
 .scroll-indicator {
   position: absolute;
-  bottom: 3rem; 
+  bottom: 1.5rem; /* Moved down closer to the bottom edge */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem; /* Space between text and arrow */
+  gap: 1rem; /* Adjusted gap for longer stem */
   font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.3em;
   font-size: 0.75rem;
@@ -154,9 +154,8 @@ header {
 
 .scroll-arrow-full {
   width: 40px;
-  height: 40px;
+  height: 50px; /* Increased from 40px */
   opacity: 0.6;
-  /* Animation removed as requested */
 }
 
 @keyframes scroll-slide {
