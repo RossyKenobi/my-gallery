@@ -717,11 +717,21 @@ html {
 @media (max-width: 768px) {
   /* Navbar Mobile Optimization */
   .minimal-nav {
-    padding: 0.6rem 1.5rem; /* More compact for mobile pill */
+    padding: 0.6rem 1.2rem; /* Tighter padding for mobile pill */
     top: 1rem;
-    width: calc(100% - 2rem); /* Keep some margin on sides */
+    width: 92%; /* Slightly wider but centered */
     max-width: none;
     align-items: center;
+  }
+  .nav-brand {
+    font-size: 0.9rem;
+  }
+  .nav-link {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+  }
+  .nav-links {
+    gap: 1.2rem;
   }
 
   /* Hero Section Mobile Optimization */
