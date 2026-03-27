@@ -347,9 +347,9 @@ const posts = (postsData || []).map(post => ({
                 const navProgress = Math.min(scrollY / navTransitionThreshold, 1);
                 
                 // Gradual background and blur
-                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.3})`; 
-                minimalNav.style.backdropFilter = `blur(${navProgress * 10}px)`; 
-                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 10}px)`; 
+                minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.05})`; 
+                minimalNav.style.backdropFilter = `blur(${navProgress * 5}px)`; 
+                minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 5}px)`; 
                 
                 if (scrollY > 20) {
                     minimalNav.classList.add('is-scrolled');
