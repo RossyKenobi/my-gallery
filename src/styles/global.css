@@ -158,12 +158,6 @@ header {
   opacity: 0.6;
 }
 
-@media (max-width: 768px) {
-  .scroll-indicator {
-    bottom: 6rem; /* Move up on mobile to be clearly visible above nav */
-  }
-}
-
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -789,14 +783,6 @@ html {
     padding-bottom: 150px; /* Reverted to V7 balance */
   }
 
-  /* Revert to V7 balance and reduce gap by pulling gallery up */
-  body .hero-divider {
-    bottom: 80px !important; 
-    background: rgba(255, 255, 255, 0.2) !important;
-    opacity: 1 !important;
-    width: calc(100% - 6rem); /* Align with the new grid layout width */
-  }
-
   .hero-title {
     width: 80vw;
     white-space: nowrap;
@@ -806,11 +792,6 @@ html {
   
   .hero-subtitle {
     font-size: 1.1rem;
-  }
-
-  .scroll-indicator {
-    bottom: 145px !important; /* Move fully above gray line path */
-    z-index: 11;
   }
 
   .gallery-grid {
@@ -826,7 +807,6 @@ html {
     margin-bottom: 0 !important;
     position: relative;
     z-index: 6;
-    width: calc(100% - 6rem) !important; /* Force width match with hero-divider */
   }
 
   .contact-section {
@@ -922,6 +902,12 @@ html {
 
 /* Mobile Adjustments */
 @media (max-width: 640px) {
+  /* Synchronize divider widths exactly when Grid transitions to 1-column array padding */
+  body .hero-divider,
+  .gallery-divider:not(.hero-divider) {
+    width: calc(100% - 6rem) !important;
+  }
+  
   .gallery-grid {
     padding: 2rem 3rem 1.5rem; /* Set bottom padding to exactly equal bottom bar padding for Edit button vertical symmetry */
     column-gap: 1.5rem;
