@@ -181,8 +181,10 @@ header {
 
 @media (min-width: 1024px) {
   .gallery-grid {
+    --grid-gap: 2rem;
+    --col-width: calc((100% - var(--grid-gap)) / 2);
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem; /* Appropriately shrink both column and row gaps */
+    gap: var(--grid-gap);
   }
   
   .gallery-item-wrapper:nth-child(5n + 1) {
@@ -198,9 +200,8 @@ header {
   .gallery-item-wrapper:nth-child(5n + 2) {
     grid-column: 2;
     grid-row: span 2;
-    align-self: stretch;
-    height: 100%;
-    min-height: 0; /* Forces the box to shrink to mathematically defined row height, preventing grid overflow */
+    /* User Formula: Height = Width * (18/16) + Gap */
+    height: calc(var(--col-width) * 1.125 + var(--grid-gap));
   }
   
   .gallery-item-wrapper:nth-child(5n + 4) {
