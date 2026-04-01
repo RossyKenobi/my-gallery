@@ -181,14 +181,20 @@ header {
 
 @media (min-width: 1024px) {
   .gallery-grid {
-    --grid-gap: 4rem;
-    grid-template-columns: calc((100% - 1.8 * var(--grid-gap)) / 1.9) calc(((100% - 1.8 * var(--grid-gap)) / 1.9) * 0.9 + 0.8 * var(--grid-gap));
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 1.5rem; /* Shrink minimum vertical gap */
   }
   
-  .gallery-item-wrapper:nth-child(5n + 1),
+  .gallery-item-wrapper:nth-child(5n + 1) {
+    grid-column: 1;
+    aspect-ratio: 16 / 9;
+    align-self: start; /* Locks to top boundary */
+  }
+  
   .gallery-item-wrapper:nth-child(5n + 3) {
     grid-column: 1;
     aspect-ratio: 16 / 9;
+    align-self: end; /* Locks to bottom boundary */
   }
   
   .gallery-item-wrapper:nth-child(5n + 2) {
