@@ -749,23 +749,21 @@ import '../styles/global.css';
 
       // --- R2 Upload Helpers ---
       async function uploadToR2(file, filename) {
-        // Convert file/blob to base64, then send to our API which uploads to R2 server-side
-        const base64 = await fileToBase64(file);
+        // Send as FormData (binary, no base64 overhead)
+        const formData = new FormData();
+        formData.append('filename', filename);
+        formData.append('file', file, filename);
+
         const res = await fetch(UPLOAD_API, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename,
-            contentType: file.type || 'image/jpeg',
-            fileData: base64,
-          }),
+          body: formData,
         });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Upload failed');
+
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data) {
+          throw new Error((data && data.error) || `Upload failed (HTTP ${res.status})`);
         }
-        const { finalImageUrl } = await res.json();
-        return finalImageUrl;
+        return data.finalImageUrl;
       }
 
       function fileToBase64(file) {
