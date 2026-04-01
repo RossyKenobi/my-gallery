@@ -934,9 +934,6 @@ html {
   .contact-section {
     padding: 3rem 1.5rem 4rem;
   }
-  .gallery-item-wrapper {
-    margin-bottom: 2rem;
-  }
 }
 
 /* Gallery Loading State */
