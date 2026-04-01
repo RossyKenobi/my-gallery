@@ -798,11 +798,11 @@ html {
   }
 
   .scroll-indicator {
-    bottom: 0.5rem !important; /* Push arrow tip down tight against the viewport boundary */
+    bottom: 2rem !important; /* Raised up into safe visual area, free of bottom browser UI */
   }
 
   body .hero-divider {
-    bottom: -1rem !important; /* Precisely 1.5rem (24px) structural gap below the arrow, leaving it just outside initial iOS screen bounds */
+    bottom: -0.5rem !important; /* Lifted up strictly to maintain the extremely tight desktop 2.5rem proportional gap with arrow, resting exactly on the lower fold threshold */
   }
 
   .gallery-grid {
