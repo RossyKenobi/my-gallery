@@ -175,11 +175,9 @@ header {
   align-items: start;
 }
 
-@media (min-width: 640px) {
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-}
+/* Removed obsolete block, combined below */
 
-@media (min-width: 1024px) {
+@media (min-width: 640px) {
   .gallery-grid {
     --grid-gap: 3rem; /* 重新恢复一点呼吸间距，3rem是最平衡的视觉体验 */
     grid-template-columns: repeat(2, 1fr);
@@ -793,10 +791,10 @@ html {
 
   /* Revert to V7 balance and reduce gap by pulling gallery up */
   body .hero-divider {
-    bottom: 90px !important; 
+    bottom: 80px !important; 
     background: rgba(255, 255, 255, 0.2) !important;
     opacity: 1 !important;
-    width: calc(100% - 8rem);
+    width: calc(100% - 6rem); /* Align with the new grid layout width */
   }
 
   .hero-title {
@@ -811,7 +809,7 @@ html {
   }
 
   .scroll-indicator {
-    bottom: 125px !important; /* Reverted to V7 balance */
+    bottom: 145px !important; /* Move fully above gray line path */
     z-index: 11;
   }
 
@@ -924,7 +922,7 @@ html {
 /* Mobile Adjustments */
 @media (max-width: 640px) {
   .gallery-grid {
-    padding: 2rem 1.5rem 1rem;
+    padding: 2rem 3rem 1rem; /* Increase mobile side padding to visually shrink large mobile photos (3rem * 2 = 6rem, matches hero scale) */
     column-gap: 1.5rem;
   }
   .gallery-bottom-bar {
