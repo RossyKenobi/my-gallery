@@ -822,7 +822,7 @@ html {
   }
 
   .gallery-divider:not(.hero-divider) {
-    margin-top: -20px !important; /* Pull the second divider up */
+    margin-top: 0 !important; /* Align naturally to restore perfect symmetry below the edit button */
     margin-bottom: 0 !important;
     position: relative;
     z-index: 6;
@@ -923,7 +923,7 @@ html {
 /* Mobile Adjustments */
 @media (max-width: 640px) {
   .gallery-grid {
-    padding: 2rem 3rem 1rem; /* Increase mobile side padding to visually shrink large mobile photos (3rem * 2 = 6rem, matches hero scale) */
+    padding: 2rem 3rem 1.5rem; /* Set bottom padding to exactly equal bottom bar padding for Edit button vertical symmetry */
     column-gap: 1.5rem;
     row-gap: 1.35rem; /* Exactly matched to the 13.5% ratio of desktop gap-to-horizontal-photo-height */
   }
