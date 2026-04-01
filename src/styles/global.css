@@ -172,7 +172,7 @@ header {
   padding: 4rem 4rem 2rem;
   max-width: 1800px;
   margin: 0 auto;
-  align-items: stretch; /* Forces elements to span their designated grid areas perfectly */
+  align-items: start;
 }
 
 @media (min-width: 640px) {
@@ -206,7 +206,6 @@ header {
     aspect-ratio: 16 / 9;
   }
   
-  .gallery-item-wrapper { height: 100%; }
   .gallery-item { height: 100%; }
   .gallery-item img { height: 100%; }
 }
