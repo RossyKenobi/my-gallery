@@ -114,7 +114,11 @@ import '../styles/global.css';
 
             
             <label class="modal-caption" style="margin-top: 1rem; margin-bottom: 0.5rem; display: block;">ADD A CAPTION</label>
-            <textarea id="local-caption-input" class="mini-caption-textarea" placeholder="" rows="4"></textarea>
+            <textarea id="local-caption-input" class="mini-caption-textarea" placeholder="Say Something?" rows="3"></textarea>
+            <div class="mini-author-group">
+              <span class="mini-author-label">BY</span>
+              <input type="text" id="local-author-input" class="mini-author-input" placeholder="J. Doe" />
+            </div>
           </div>
         </div>
 
@@ -131,7 +135,11 @@ import '../styles/global.css';
         <h3 class="modal-title">Edit Stack</h3>
         <p class="modal-caption" style="margin-bottom: 0;">Drag to reorder, click × to delete</p>
         <div id="mini-gallery-grid" class="mini-gallery-grid"></div>
-        <textarea id="mini-caption-input" class="mini-caption-textarea" placeholder="Stack caption..." rows="4"></textarea>
+        <textarea id="mini-caption-input" class="mini-caption-textarea" placeholder="Say Something?" rows="3"></textarea>
+        <div class="mini-author-group">
+          <span class="mini-author-label">BY</span>
+          <input type="text" id="mini-author-input" class="mini-author-input" placeholder="J. Doe" />
+        </div>
 
         <div class="modal-actions" style="margin-top: 2rem; justify-content: flex-end; gap: 1.5rem;">
           <button class="action-btn" id="close-mini-gallery">Cancel</button>
@@ -319,6 +327,7 @@ import '../styles/global.css';
       let currentMiniImages = [];
       let originalMiniImages = '';
       let originalMiniCaption = '';
+      let originalMiniAuthor = '';
       let pendingMiniDeleteIdx = null;
 
       const PASSWORD = 'steveyfff';
@@ -393,6 +402,7 @@ import '../styles/global.css';
       const confirmMiniGalleryBtn = document.getElementById('confirm-mini-gallery');
       const miniGalleryGrid = document.getElementById('mini-gallery-grid');
       const miniCaptionInput = document.getElementById('mini-caption-input');
+      const miniAuthorInput = document.getElementById('mini-author-input');
       const miniImportBtn = document.getElementById('mini-import-btn');
       const miniFileInput = document.getElementById('mini-file-input');
 
@@ -676,7 +686,9 @@ import '../styles/global.css';
       miniFileInput.addEventListener('cancel', () => { filePickerActive = false; });
 
       closeMiniGalleryBtn.addEventListener('click', () => {
-        const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || miniCaptionInput.value !== originalMiniCaption;
+        const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || 
+                          miniCaptionInput.value !== originalMiniCaption ||
+                          miniAuthorInput.value !== originalMiniAuthor;
         if (hasChanges) {
           pendingAction = 'DISCARD_MINI_GALLERY';
           openModal(confirmDiscardModal);
@@ -690,7 +702,10 @@ import '../styles/global.css';
         if (!currentEditingWrapper) { closeModal(miniGalleryModal); return; }
         const postId = currentEditingWrapper.getAttribute('data-id');
         const newCaption = miniCaptionInput.value;
-        const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || newCaption !== originalMiniCaption;
+        const newAuthor = miniAuthorInput.value;
+        const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages || 
+                          newCaption !== originalMiniCaption ||
+                          newAuthor !== originalMiniAuthor;
         if (!hasChanges) { closeModal(miniGalleryModal); return; }
 
         // Find new images (data URLs) that need uploading to R2
@@ -722,7 +737,7 @@ import '../styles/global.css';
           progressBarInner.style.width = '80%';
 
           const updatedPosts = allPosts.map(p =>
-            p.id === postId ? { ...p, images: [...currentMiniImages], caption: newCaption } : p
+            p.id === postId ? { ...p, images: [...currentMiniImages], caption: newCaption, author: newAuthor } : p
           );
           await savePostsToR2(updatedPosts);
           allPosts = updatedPosts;
@@ -743,6 +758,8 @@ import '../styles/global.css';
         originalMiniImages = JSON.stringify(currentMiniImages);
         miniCaptionInput.value = wrapper.getAttribute('data-caption') || '';
         originalMiniCaption = miniCaptionInput.value;
+        miniAuthorInput.value = wrapper.getAttribute('data-author') || '';
+        originalMiniAuthor = miniAuthorInput.value;
         renderMiniGallery();
         openModal(miniGalleryModal);
       }
@@ -829,6 +846,7 @@ import '../styles/global.css';
       async function handleLocalUpload() {
         const files = Array.from(fileInput.files || []);
         const caption = document.getElementById('local-caption-input').value;
+        const author = document.getElementById('local-author-input').value;
         if (files.length === 0) return;
 
         openModal(progressModal);
@@ -868,6 +886,7 @@ import '../styles/global.css';
           const newPost = {
             id: postId,
             caption: caption,
+            author: author,
             timestamp: new Date().toISOString(),
             images: imageUrls,
             hidden: false,
@@ -905,12 +924,13 @@ import '../styles/global.css';
         const thumbnail = images.length > 0 ? images[0] : '';
         const imagesData = JSON.stringify(images).replace(/"/g, '&quot;');
         const captionData = (post.caption || '').replace(/"/g, '&quot;');
-
+        const authorData = (post.author || '').replace(/"/g, '&quot;');
+        
         // Graceful degradation: If old metadata is completely missing the orientation flag (undefined), default to landscape safely.
         const orientationClass = post.isPortrait === true ? 'is-portrait' : 'is-landscape';
 
         return `
-          <div class="gallery-item-wrapper ${orientationClass}" data-id="${post.id}" data-images="${imagesData}" data-caption="${captionData}" data-needs-check="${post.isPortrait === undefined}">
+          <div class="gallery-item-wrapper ${orientationClass}" data-id="${post.id}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-needs-check="${post.isPortrait === undefined}">
             <a href="${thumbnail}" class="gallery-item" data-pswp-src="${thumbnail}">
               <img src="${thumbnail}" alt="${post.caption || 'Gallery Post'}" loading="lazy" decoding="async" />
               <button class="delete-btn" aria-label="Delete Post" data-id="${post.id}" onclick="event.stopPropagation();">
@@ -1027,7 +1047,12 @@ import '../styles/global.css';
                   order: 9, isButton: false, appendTo: 'root', html: '',
                   onInit: (el, pswpInstance) => {
                     pswpInstance.on('change', () => {
-                      el.innerHTML = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
+                      const currentAuthor = wrapper.getAttribute('data-author');
+                      let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
+                      if (currentAuthor && currentAuthor.trim() !== '') {
+                        finalCaption += ` BY ${currentAuthor}`;
+                      }
+                      el.innerHTML = finalCaption;
                     });
                   }
                 });
