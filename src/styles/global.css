@@ -247,7 +247,7 @@ header {
   height: auto;
   display: block;
   object-fit: cover;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .gallery-item:hover img {
@@ -302,9 +302,13 @@ header {
 
 body.is-editing .gallery-item {
   border: 1px dashed rgba(255, 255, 255, 0.3);
-  padding: 12px;
   border-radius: 24px;
-  box-sizing: border-box;
+  /* Removed layout-breaking padding */
+}
+
+body.is-editing .gallery-item img {
+  transform: scale(0.95); /* Perfect mathematical inner zoom suspension */
+  border-radius: 20px; /* Symmetrically matching restored corners */
 }
 
 body.is-editing .sortable-ghost .gallery-item {
