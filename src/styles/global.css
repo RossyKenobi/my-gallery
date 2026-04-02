@@ -450,8 +450,9 @@ body.is-editing .sortable-ghost .gallery-item {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   padding: 2.5rem; /* Reduced from 3rem */
-  width: 100%;
+  width: 95%; /* Use percentage to ensure gaps at all widths */
   max-width: 440px;
+  margin: 0 auto;
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   text-align: center;
 }
@@ -989,8 +990,8 @@ html {
   /* Mini Gallery Mobile Refinements */
   .modal-content {
     padding: 2.5rem 1.5rem !important;
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 92% !important; /* Slightly more gap on tiny screens */
+    max-width: 92% !important;
   }
   .mini-gallery-grid {
     grid-template-columns: repeat(2, 1fr) !important;
