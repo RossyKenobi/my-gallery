@@ -1050,7 +1050,7 @@ import '../styles/global.css';
                       const currentAuthor = wrapper.getAttribute('data-author');
                       let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
                       if (currentAuthor && currentAuthor.trim() !== '') {
-                        finalCaption += ` BY ${currentAuthor}`;
+                        finalCaption += `<br><b>BY ${currentAuthor.trim()}</b>`;
                       }
                       el.innerHTML = finalCaption;
                     });
