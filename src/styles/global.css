@@ -473,7 +473,7 @@ body.is-editing .sortable-ghost .gallery-item {
 
 .modal-input-group {
   margin-bottom: 2rem;
-  text-align: left;
+  text-align: center; /* Harmonize with centered title and grid */
 }
 
 .modal-caption {
@@ -482,7 +482,8 @@ body.is-editing .sortable-ghost .gallery-item {
   text-transform: uppercase;
   letter-spacing: 0.15em;
   color: rgba(255,255,255,0.4);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem; /* Reduced gap - closer to input */
+  text-align: center;
 }
 
 .modal-input {
