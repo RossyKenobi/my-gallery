@@ -523,6 +523,9 @@ body.is-editing .sortable-ghost .gallery-item {
   display: flex;
   gap: 1.5rem; /* Desktop and iPad maintain large gaps */
 }
+.hidden {
+  display: none !important;
+}
 
 .modal-actions {
   display: flex;
@@ -1030,10 +1033,10 @@ html {
   }
 }
 @media (max-width: 480px) {
-  /* iPhone specific alignment for edit buttons */
-  .gallery-bottom-bar {
-    padding: 0 3rem !important; /* Perfect align with grid edges */
+  /* iPhone specific: stretch edit-controls so #edit-actions can fill the width */
+  .edit-controls {
     width: 100% !important;
+    /* justify-content: flex-end is inherited — Edit button stays right-aligned */
   }
   #edit-actions {
     width: 100% !important;
@@ -1041,7 +1044,7 @@ html {
     gap: 0 !important;
   }
   #edit-actions .action-btn {
-    padding: 0.4rem 0.65rem !important; /* Extremely compact pills */
+    padding: 0.4rem 0.85rem !important; /* Balanced pills with breathing room */
     font-size: 0.65rem !important;
     letter-spacing: 0.05em !important;
     min-width: 0 !important;
