@@ -1,4 +1,4 @@
-# F.Y. | Minimalist Photo Portfolio
+# THE GALLERY BY F.Y.
 
 [![Astro](https://img.shields.io/badge/Astro-4.0+-FF5D01.svg?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build/)
 [![PhotoSwipe](https://img.shields.io/badge/PhotoSwipe-5.4-yellow.svg?style=for-the-badge&logo=javascript&logoColor=black)](https://photoswipe.com/)
