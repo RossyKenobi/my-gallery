@@ -6,4 +6,9 @@ export default defineConfig({
   output: 'hybrid',
   adapter: vercel(),
   integrations: [clerk()],
+  vite: {
+    ssr: {
+      noExternal: ['cookie'],
+    },
+  },
 });

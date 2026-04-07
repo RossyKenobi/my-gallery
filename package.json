@@ -18,8 +18,10 @@
     "@smithy/protocol-http": "^5.3.12",
     "@smithy/signature-v4": "^5.3.12",
     "astro": "^4.0.0",
+    "clsx": "^2.1.1",
     "cookie": "^1.1.1",
     "dotenv": "^17.3.1",
+    "nanoid": "^5.1.7",
     "photoswipe": "^5.4.3",
     "sharp": "^0.33.5",
     "sortablejs": "^1.15.7"
