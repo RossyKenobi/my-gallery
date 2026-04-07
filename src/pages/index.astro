@@ -37,10 +37,10 @@ if (currentUserId) {
       <div class="nav-links">
         <a href="#contact" class="nav-link">Contact</a>
         { !currentUserId ? (
-          <button class="nav-link" id="custom-login-btn" style="background:none; border:none; cursor:pointer; font:inherit;">Login</button>
+          <button class="nav-link" id="custom-login-btn">Login</button>
         ) : (
           <div class="user-menu-wrapper" style="position: relative;">
-            <button class="nav-link user-menu-trigger" id="user-menu-trigger" style="background:none; border:none; cursor:pointer; font:inherit;">{currentUsername}</button>
+            <button class="nav-link user-menu-trigger" id="user-menu-trigger">{currentUsername}</button>
             <div class="user-menu-popover" id="user-menu-popover">
               <button class="user-menu-item" id="user-menu-manage">Manage account</button>
               <button class="user-menu-item user-menu-signout" id="user-menu-signout">Sign out</button>
