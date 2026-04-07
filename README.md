@@ -1,11 +1,11 @@
-# THE GALLERY BY F.Y.
+# THE GALLERY BY F.Y. | SILENT FLÂNERIE
 
 [![Astro](https://img.shields.io/badge/Astro-4.0+-FF5D01.svg?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build/)
-[![PhotoSwipe](https://img.shields.io/badge/PhotoSwipe-5.4-yellow.svg?style=for-the-badge&logo=javascript&logoColor=black)](https://photoswipe.com/)
-[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-black.svg?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![Clerk](https://img.shields.io/badge/Clerk-Managed_Auth-6C47FF.svg?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com/)
+[![Postgres](https://img.shields.io/badge/Postgres-Neon_DB-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black.svg?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-A premium, high-performance photography portfolio designed for visual storytellers. Built on a "Zero-Backend" architecture, it leverages the GitHub API to provide full content management directly from the browser window.
+A premium, high-performance photography portfolio designed for visual storytellers. Evolved from a simple static site to a robust serverless full-stack application, it now leverages Postgres for lightning-fast metadata handling and Clerk for secure, role-based access control.
 
 ---
 
@@ -16,22 +16,27 @@ A premium, high-performance photography portfolio designed for visual storytelle
 - **PhotoSwipe 5 Integration**: A state-of-the-art lightbox with deep-zoom, mobile gestures, and smart preloading.
 - **Dynamic Aspect Ratios**: Intelligent handling of portrait, landscape, and panoramic shots without distortion.
 
-### ⚡ Zero-Backend Management (Admin UI)
-- **Direct GitHub API Integration**: Manage your portfolio without a database.
-- **In-Browser CRUD**: Add, reorder (drag-and-drop), and delete posts directly from the live site via a secure administrative layer.
-- **Automated CI/CD**: Changes saved in the browser trigger GitHub Actions for immediate site rebuild and deployment.
+### 🛡️ Role-Based Content Management (RBAC)
+- **Multi-User Collaboration**: Support for both Administrators and Ordinary Users.
+- **Permission Tiers**: 
+  - **Admins**: Full control over global gallery reordering and any content.
+  - **Users**: Upload and manage their own stacks while viewing others in a read-only state.
+- **Clerk Authentication**: Secure, enterprise-grade identity management with invitation-based registration.
 
-### 📸 Instagram Workflow
-- **Carousel Extraction**: Specialized logic for importing Instagram carousel posts while maintaining high-resolution local storage.
+### 📸 Pro-Grade Infrastructure
+- **Cloudflare R2 Storage**: High-resolution assets served via a global CDN with zero bandwidth egress costs.
+- **Neon Postgres**: Relational database for instant content updates and persistent sorting order.
 
 ---
 
 ## 🛠️ Technical Stack
 
-- **Framework**: [Astro](https://astro.build/) (Static Site Generation for sub-second load times)
-- **Styling**: Vanilla CSS (Custom-built minimalist design system)
-- **Interactions**: [SortableJS](https://sortablejs.com/) for gallery reordering & [PhotoSwipe](https://photoswipe.com/) for viewing.
-- **Deployment**: Dual-compatibility with **GitHub Pages** (via Actions) and **Vercel**.
+- **Framework**: [Astro](https://astro.build/) (Hybrid SSR for dynamic permissions and SEO)
+- **Database**: [Neon Postgres](https://neon.tech/) (Serverless SQL)
+- **Auth**: [Clerk](https://clerk.com/) (Identity & Access)
+- **Storage**: [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) (S3-compatible)
+- **Styling**: Vanilla CSS (Pill-shaped minimalist design system)
+- **Interactions**: [SortableJS](https://sortablejs.com/) for drag-and-drop reordering.
 
 ---
 
@@ -52,10 +57,10 @@ npm run build
 
 ### 2. Administrative Setup
 
-To use the **In-Browser Admin UI**:
-1. Click **Admin** in the navigation bar.
-2. Login using your configured local password (set by admin).
-3. Enter your **GitHub Personal Access Token** (PAT) when prompted to authorize site updates.
+To access the **Professional Management UI**:
+1. Register a new account via the **Login** link (requires a valid **Invitation Code**).
+2. Use an **Invitation Code** starting with `ROOT-ADMIN-` to gain full administrative privileges.
+3. Ordinary users can register with standard codes to contribute their own photography.
 
 ---
 
@@ -78,21 +83,13 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 
 ## 📝 Changelog
 
-### v1.1.0 
-- **UI Modernization**: Upgraded all modals, thumbnails, and interactive elements to a `24px` border radius, creating a consistent "pill-shaped" aesthetic mirroring the top navigation bar.
-- **Bespoke Desktop Gallery Layout**: Replaced the automated JS masonry with a strict, asymmetric CSS Grid layout on desktop. Images are now strictly aligned flush top-to-bottom automatically mapping horizontal (`16:9`) and vertical (`4:5`) content sequentially.
-- **R2 Cloud Storage Migration**: Fully transitioned the image upload pipeline from GitHub API to Cloudflare R2 bucket storage via presigned URLs and serverless functions, massively improving reliability and bypassing rate-limits.
-
-### v1.0.8 
-- Addressed deployment cache issues causing outdated layouts to be served.
-- Implemented robust error handling and diagnostics for the image upload APIs.
-
-### v1.0.5
-- Mobile-responsive adjustments ensuring precise vertical alignment of the Hero divider and scroll indicator with the mobile address bar.
-- Typography standardization targeting 'Montserrat' and unified 4-line height caption textareas across all modes.
+### v1.2.0 (Current)
+- **Database Refactor**: Migrated from GitHub-based storage to **Neon Postgres**, enabling sub-ms sorting and state management.
+- **Role-Based Permissions**: Implemented a sophisticated permission model. Non-admins are restricted from global sorting and can only edit their own uploads.
+- **Cloud Stability**: Replaced GitHub API build-triggers with direct R2 uploads and immediate DB updates, eliminating deployment lag.
+- **Branding**: Official rebranding to **Silent Flânerie**.
 
 ---
 
-> [!NOTE]
-> This project is designed for photographers who want the speed of a static site with the convenience of a CMS, hosted completely for free.
-
+> [!IMPORTANT]
+> This project requires **Postgres** and **Clerk** environment variables to be configured in Vercel. Ensure `POSTGRES_URL` and `CLERK_SECRET_KEY` are properly set.
