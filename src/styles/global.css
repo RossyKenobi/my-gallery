@@ -1238,6 +1238,13 @@ div[style*="repeating-linear-gradient"], div[style*="Development mode"] {
 }
 
 /* --- Sign-In Modal Overrides --- */
+/* Make input field pill-shaped to match the button */
+body div.cl-signIn-root .cl-formFieldInput {
+  border-radius: 40px !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
 /* Force button text to be dark/visible */
 .cl-signIn-root .cl-formButtonPrimary,
 .cl-signIn-root .cl-formButtonPrimary span,
