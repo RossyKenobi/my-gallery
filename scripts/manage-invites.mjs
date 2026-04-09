@@ -51,12 +51,25 @@ async function main() {
         console.log(`${c.code} -> 被用户 [${c.used_by_clerk_id || '未知'}] 使用 (使用时间: ${time})`);
       });
     } 
+    else if (action === 'users') {
+      const users = await sql`
+        SELECT email, clerk_id, is_admin, created_at FROM users
+        ORDER BY created_at DESC
+      `;
+      console.log('--- 👤 注册用户列表 ---');
+      if (users.length === 0) console.log('(空)');
+      users.forEach(u => {
+        const role = u.is_admin ? '[ADMIN]' : '[USER]';
+        console.log(`${role} ${u.email.padEnd(30)} ID: ${u.clerk_id} (注册时间: ${new Date(u.created_at).toLocaleString()})`);
+      });
+    }
     else {
       console.log(`
 用法:
   node scripts/manage-invites.mjs generate   # 生成一个新的邀请码
   node scripts/manage-invites.mjs list       # 查看所有未使用的邀请码
   node scripts/manage-invites.mjs used       # 查看所有已被使用的邀请码
+  node scripts/manage-invites.mjs users      # 查看所有已注册的用户
       `);
     }
   } catch (err) {

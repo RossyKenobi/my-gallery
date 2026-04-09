@@ -92,6 +92,8 @@ header {
 /* Custom User Menu (replaces Clerk UserButton popover) */
 .user-menu-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .user-menu-trigger {
