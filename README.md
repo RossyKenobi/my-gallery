@@ -7,6 +7,8 @@
 
 A premium, high-performance photography portfolio designed for visual storytellers. Evolved from a simple static site to a robust serverless full-stack application, it now leverages Postgres for lightning-fast metadata handling and Clerk for secure, role-based access control.
 
+🔗 **Live**: [penumbrae.uk](https://penumbrae.uk)
+
 ---
 
 ## ✨ Core Features
@@ -24,7 +26,7 @@ A premium, high-performance photography portfolio designed for visual storytelle
 - **Clerk Authentication**: Secure, enterprise-grade identity management with invitation-based registration.
 
 ### 📸 Pro-Grade Infrastructure
-- **Cloudflare R2 Storage**: High-resolution assets served via a global CDN with zero bandwidth egress costs.
+- **Cloudflare R2 Storage**: High-resolution assets served via a global CDN (`img.penumbrae.uk`) with zero bandwidth egress costs.
 - **Neon Postgres**: Relational database for instant content updates and persistent sorting order.
 
 ---
@@ -35,8 +37,9 @@ A premium, high-performance photography portfolio designed for visual storytelle
 - **Database**: [Neon Postgres](https://neon.tech/) (Serverless SQL)
 - **Auth**: [Clerk](https://clerk.com/) (Identity & Access)
 - **Storage**: [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) (S3-compatible)
+- **Hosting**: [Vercel](https://vercel.com/) (Serverless Functions + Edge Network)
 - **Styling**: Vanilla CSS (Pill-shaped minimalist design system)
-- **Interactions**: [SortableJS](https://sortablejs.com/) for drag-and-drop reordering.
+- **Interactions**: [SortableJS](https://sortablejs.com/) for drag-and-drop reordering
 
 ---
 
@@ -55,12 +58,9 @@ npm run dev
 npm run build
 ```
 
-### 2. Administrative Setup
+### 2. Access & Registration
 
-To access the **Professional Management UI**:
-1. Register a new account via the **Login** link (requires a valid **Invitation Code**).
-2. Use an **Invitation Code** starting with `ROOT-ADMIN-` to gain full administrative privileges.
-3. Ordinary users can register with standard codes to contribute their own photography.
+Registration is invitation-only. Contact an administrator to obtain an invitation code, then register via the **Login** link on the site.
 
 ---
 
@@ -83,13 +83,33 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 
 ## 📝 Changelog
 
-### v1.2.0 (Current)
-- **Database Refactor**: Migrated from GitHub-based storage to **Neon Postgres**, enabling sub-ms sorting and state management.
-- **Role-Based Permissions**: Implemented a sophisticated permission model. Non-admins are restricted from global sorting and can only edit their own uploads.
+### v1.3.0 (Current)
+- **CDN Domain Migration**: Migrated image CDN from `img.nitakupenda.eu.cc` to `img.penumbrae.uk` to improve accessibility in restricted network environments (e.g. mainland China).
+- **Domain Consolidation**: Unified site and asset domains under `penumbrae.uk`, replacing the previous `nitakupenda.eu.cc`.
+- **Database URL Migration**: Batch-updated all existing photo URLs in Postgres to reflect the new CDN domain.
+- **CORS Update**: Updated R2 CORS rules to include the new domain origin.
+
+### v1.2.0
+- **Database Refactor**: Migrated from GitHub-based JSON storage to **Neon Postgres**, enabling sub-ms sorting and state management.
+- **Role-Based Permissions**: Implemented a sophisticated RBAC permission model. Non-admins are restricted from global sorting and can only edit their own uploads.
+- **Invitation System**: Added invitation-code-based registration gated by Clerk, with admin and user tier codes.
 - **Cloud Stability**: Replaced GitHub API build-triggers with direct R2 uploads and immediate DB updates, eliminating deployment lag.
 - **Branding**: Official rebranding to **Silent Flânerie**.
+
+### v1.1.0
+- **R2 Migration**: Moved all image assets from the GitHub repository to **Cloudflare R2** object storage, bypassing network restrictions and enabling instant content updates without redeployment.
+- **Client-Side Rendering**: Refactored the gallery from static SSG to dynamic client-side rendering, fetching image data from R2 at runtime.
+- **Image Compression**: Added client-side image compression (max 2400px, JPEG 85%) before upload to optimise storage and load times.
+
+### v1.0.0
+- **Initial Release**: Static Astro site with GitHub-hosted images, PhotoSwipe lightbox, masonry grid layout, and dark-mode-first design.
+- **Admin UI**: Drag-and-drop reordering with SortableJS, inline edit/delete controls.
+- **Responsive Design**: Fully adaptive layout across desktop, tablet, and mobile.
 
 ---
 
 > [!IMPORTANT]
-> This project requires **Postgres** and **Clerk** environment variables to be configured in Vercel. Ensure `POSTGRES_URL` and `CLERK_SECRET_KEY` are properly set.
+> This project requires the following environment variables to be configured in Vercel:
+> - `POSTGRES_URL` — Neon database connection string
+> - `CLERK_SECRET_KEY` / `PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk authentication keys
+> - `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` — Cloudflare R2 credentials
