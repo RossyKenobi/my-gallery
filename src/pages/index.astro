@@ -1171,12 +1171,13 @@ if (currentUserId) {
             cs.textContent = `
               #clerk-signin-mount .cl-formButtonPrimary { margin-bottom: 0 !important; }
               #clerk-signin-mount form { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+              #clerk-signin-mount form > div { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-main { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-card { padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-cardBox { padding-bottom: 0.5rem !important; }
-              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem !important; }
-              #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; }
-              #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; }
+              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem 1rem 2rem !important; text-align: center !important; }
+              #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; text-align: center !important; }
+              #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; text-align: center !important; }
               #clerk-signin-mount .cl-backLink { margin: 0 !important; }
             `;
             document.head.appendChild(cs);
@@ -1471,9 +1472,14 @@ if (currentUserId) {
                el.style.background = 'transparent';
             } else if (text === 'Reset your password') {
                const resetBtn = el.closest('button') || el;
-               resetBtn.style.background = 'transparent';
-               resetBtn.style.color = '#ededed';
-               resetBtn.style.border = '1px solid rgba(237,237,237,0.2)';
+               resetBtn.style.setProperty('background', 'transparent', 'important');
+               resetBtn.style.setProperty('color', '#ededed', 'important');
+               resetBtn.style.setProperty('border', '1px solid rgba(237,237,237,0.2)', 'important');
+               resetBtn.querySelectorAll('*').forEach(c => c.style.setProperty('color', '#ededed', 'important'));
+            } else if (text === 'Use another method') {
+               el.style.display = 'block';
+               el.style.textAlign = 'center';
+               el.style.width = '100%';
             }
           }
 
@@ -1484,7 +1490,15 @@ if (currentUserId) {
           }
           if (el.classList.contains('cl-footer')) {
             el.style.setProperty('margin-top', '0', 'important');
-            el.style.setProperty('padding', '0.75rem 2rem', 'important');
+            el.style.setProperty('text-align', 'center', 'important');
+            // Per-view footer padding
+            const card = el.closest('.cl-card');
+            const title = card?.querySelector('.cl-headerTitle')?.textContent?.trim()?.toUpperCase() || '';
+            if (title === 'USE ANOTHER METHOD' || title.includes('FORGOT PASSWORD')) {
+              el.style.setProperty('padding', '1.5rem 2rem', 'important');
+            } else {
+              el.style.setProperty('padding', '0.75rem 2rem 1rem 2rem', 'important');
+            }
           }
 
           // Per-view header spacing for symmetry
@@ -1493,7 +1507,7 @@ if (currentUserId) {
             const header = el.closest('.cl-header');
             if (header) {
               if (title === 'USE ANOTHER METHOD' || title.includes('FORGOT PASSWORD')) {
-                header.style.marginBottom = '0.75rem';
+                header.style.marginBottom = '1.5rem';
               }
             }
           }
@@ -1503,6 +1517,14 @@ if (currentUserId) {
             const svgIcon = el.querySelector('svg');
             if (svgIcon) svgIcon.style.display = 'none';
             el.style.setProperty('margin-bottom', '0', 'important');
+            // Walk up and zero all parent margins between button and form
+            let parent = el.parentElement;
+            const form = el.closest('form');
+            while (parent && parent !== form) {
+              parent.style.setProperty('margin-bottom', '0', 'important');
+              parent.style.setProperty('padding-bottom', '0', 'important');
+              parent = parent.parentElement;
+            }
 
             const formContainer = el.closest('form');
             if (formContainer && !formContainer.querySelector('.custom-cancel-btn')) {
