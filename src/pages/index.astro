@@ -1582,7 +1582,7 @@ if (currentUserId) {
             const svgIcon = el.querySelector('svg');
             if (svgIcon) svgIcon.style.display = 'none';
             el.style.setProperty('margin-bottom', '0', 'important');
-            // Zero ALL parent margins/paddings between button and card
+            // Walk up and zero ALL parent margins/paddings between button and card
             let parent = el.parentElement;
             const card = el.closest('.cl-card') || el.closest('#clerk-signin-mount') || el.closest('#clerk-signup-mount');
             while (parent && parent !== card) {
@@ -1591,9 +1591,10 @@ if (currentUserId) {
               parent = parent.parentElement;
             }
 
-            // By inserting exactly as a sibling to the primary button, 
-            // we guarantee the gap is identical in all views.
-            if (!el.parentNode.querySelector('.custom-cancel-btn')) {
+            // Place cancel button OUTSIDE the form, as sibling, for consistent gap
+            const formContainer = el.closest('form');
+            const insertParent = formContainer?.closest('.cl-main') || el.closest('.cl-main') || el.parentElement;
+            if (insertParent && !insertParent.querySelector('.custom-cancel-btn')) {
               const cancelBtn = document.createElement('button');
               cancelBtn.type = 'button';
               cancelBtn.className = 'custom-cancel-btn';
@@ -1614,7 +1615,7 @@ if (currentUserId) {
               cancelBtn.style.transition = 'all 0.3s ease';
 
               const isSignUp = el.closest('#clerk-signup-mount');
-              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '0.3rem';
+              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '0rem';
               cancelBtn.style.marginBottom = '0';
               
               cancelBtn.onmouseenter = () => {
@@ -1637,8 +1638,12 @@ if (currentUserId) {
                 if (originalPushState) originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
               };
               
-              // Direct sibling insertion guarantees pixel-perfect gap matching
-              el.parentNode.insertBefore(cancelBtn, el.nextSibling);
+              // Place after form if exists, otherwise after button
+              if (formContainer) {
+                insertParent.insertBefore(cancelBtn, formContainer.nextSibling);
+              } else {
+                el.parentNode.insertBefore(cancelBtn, el.nextSibling);
+              }
             }
           }
         });
