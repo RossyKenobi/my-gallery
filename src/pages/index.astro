@@ -1132,8 +1132,22 @@ if (currentUserId) {
         openModal(signinModal);
         if (window.Clerk) {
           window.Clerk.mountSignIn(document.getElementById('clerk-signin-mount'), {
-            signUpUrl: '/#invite',
+            signUpUrl: window.location.origin + '/#invite',
             transferable: false,
+            routerPush: (to) => {
+              if (to.includes('sign-up') || to.includes('accounts.') || to.includes('clerk.')) {
+                window.location.hash = '#invite';
+              } else {
+                window.history.pushState({}, '', to);
+              }
+            },
+            routerReplace: (to) => {
+              if (to.includes('sign-up') || to.includes('accounts.') || to.includes('clerk.')) {
+                window.location.hash = '#invite';
+              } else {
+                window.history.replaceState({}, '', to);
+              }
+            },
             afterSignInUrl: window.location.href,
             afterSignUpUrl: window.location.href,
             appearance: {
@@ -1172,13 +1186,15 @@ if (currentUserId) {
               #clerk-signin-mount .cl-formButtonPrimary { margin-bottom: 0 !important; }
               #clerk-signin-mount form { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount form > div { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+              #clerk-signin-mount form div[class*="cl-internal"] { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-main { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-card { padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-cardBox { padding-bottom: 0.5rem !important; }
-              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem 1rem 2rem !important; text-align: center !important; }
+              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem !important; text-align: center !important; }
+              #clerk-signin-mount .cl-footer > * { display: block !important; width: 100% !important; text-align: center !important; }
               #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; text-align: center !important; }
               #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; text-align: center !important; }
-              #clerk-signin-mount .cl-backLink { margin: 0 !important; }
+              #clerk-signin-mount .cl-backLink { margin: 0 0 1.25rem 0 !important; display: block !important; width: 100% !important; text-align: center !important; }
             `;
             document.head.appendChild(cs);
           }
@@ -1470,17 +1486,20 @@ if (currentUserId) {
                el.style.opacity = '0.7';
                el.style.fontSize = '0.8rem';
                el.style.background = 'transparent';
-            } else if (text === 'Reset your password') {
-               const resetBtn = el.closest('button') || el;
-               resetBtn.style.setProperty('background', 'transparent', 'important');
-               resetBtn.style.setProperty('color', '#ededed', 'important');
-               resetBtn.style.setProperty('border', '1px solid rgba(237,237,237,0.2)', 'important');
-               resetBtn.querySelectorAll('*').forEach(c => c.style.setProperty('color', '#ededed', 'important'));
             } else if (text === 'Use another method') {
                el.style.display = 'block';
                el.style.textAlign = 'center';
                el.style.width = '100%';
             }
+          }
+
+          // Style Reset password button (has child elements, so check outside childElementCount block)
+          if ((el.tagName === 'BUTTON' || el.tagName === 'A') && el.textContent?.trim() === 'Reset your password') {
+            el.style.setProperty('background', 'transparent', 'important');
+            el.style.setProperty('color', '#ededed', 'important');
+            el.style.setProperty('border', '1px solid rgba(237,237,237,0.2)', 'important');
+            el.style.setProperty('border-radius', '40px', 'important');
+            el.querySelectorAll('*').forEach(c => c.style.setProperty('color', '#ededed', 'important'));
           }
 
           // Force consistent spacing on Clerk elements (belt-and-suspenders with CSS)
@@ -1517,17 +1536,19 @@ if (currentUserId) {
             const svgIcon = el.querySelector('svg');
             if (svgIcon) svgIcon.style.display = 'none';
             el.style.setProperty('margin-bottom', '0', 'important');
-            // Walk up and zero all parent margins between button and form
+            // Walk up and zero ALL parent margins/paddings between button and card
             let parent = el.parentElement;
-            const form = el.closest('form');
-            while (parent && parent !== form) {
+            const card = el.closest('.cl-card') || el.closest('#clerk-signin-mount') || el.closest('#clerk-signup-mount');
+            while (parent && parent !== card) {
               parent.style.setProperty('margin-bottom', '0', 'important');
               parent.style.setProperty('padding-bottom', '0', 'important');
               parent = parent.parentElement;
             }
 
+            // Place cancel button OUTSIDE the form, as sibling, for consistent gap
             const formContainer = el.closest('form');
-            if (formContainer && !formContainer.querySelector('.custom-cancel-btn')) {
+            const insertParent = formContainer?.closest('.cl-main') || formContainer?.parentElement;
+            if (insertParent && !insertParent.querySelector('.custom-cancel-btn')) {
               const cancelBtn = document.createElement('button');
               cancelBtn.type = 'button';
               cancelBtn.className = 'custom-cancel-btn';
@@ -1573,8 +1594,10 @@ if (currentUserId) {
                 if (originalPushState) originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
               };
               
-              // Place it exactly after the primary button
-              el.parentNode.insertBefore(cancelBtn, el.nextSibling);
+              // Place it after the form, not inside it
+              if (formContainer) {
+                insertParent.insertBefore(cancelBtn, formContainer.nextSibling);
+              }
             }
           }
         });
