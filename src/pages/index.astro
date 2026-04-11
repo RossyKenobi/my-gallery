@@ -495,6 +495,18 @@ if (currentUserId) {
       const confirmDiscardBtn = document.getElementById('confirm-discard-btn');
       const cancelDiscardBtn = document.getElementById('cancel-discard-btn');
 
+      // Protect against rogue Clerk hosted UI redirects
+      const originalAssign = window.location.assign;
+      window.location.assign = function(url) {
+        if (typeof url === 'string' && (url.includes('/sign-up') || url.includes('.clerk.accounts'))) {
+           const signinModal = document.getElementById('custom-signin-modal');
+           if (signinModal) closeModal(signinModal);
+           window.location.hash = '#invite';
+           return;
+        }
+        originalAssign.call(this, url);
+      };
+
       // Invite Modal elements
       const inviteModal = document.getElementById('invite-modal');
       const verifyInviteBtn = document.getElementById('verify-invite-btn');
@@ -1456,11 +1468,26 @@ if (currentUserId) {
           // Dynamic header spacing for Use Another Method
           if (el.classList.contains('cl-headerTitle')) {
             const header = el.closest('.cl-header');
-            if (header) {
+            const card = el.closest('.cl-card');
+            if (header && card) {
               if (el.textContent?.trim().toUpperCase() === 'USE ANOTHER METHOD') {
                 header.style.marginBottom = '2rem';
+                const mainBody = card.querySelector('.cl-main');
+                if (mainBody) mainBody.style.marginBottom = '0';
+                const footer = card.querySelector('.cl-footer');
+                if (footer) {
+                   footer.style.setProperty('padding', '2rem 2.5rem', 'important');
+                   footer.style.setProperty('margin-top', '0', 'important');
+                }
               } else {
                 header.style.marginBottom = '';
+                const mainBody = card.querySelector('.cl-main');
+                if (mainBody) mainBody.style.marginBottom = '';
+                const footer = card.querySelector('.cl-footer');
+                if (footer) {
+                   footer.style.removeProperty('padding');
+                   footer.style.removeProperty('margin-top');
+                }
               }
             }
           }
@@ -1494,7 +1521,20 @@ if (currentUserId) {
               cancelBtn.style.transition = 'all 0.3s ease';
 
               const isSignUp = el.closest('#clerk-signup-mount');
-              cancelBtn.style.marginTop = isSignUp ? '0.35rem' : '0.25rem';
+              
+              let topMargin = '0.75rem';
+              if (isSignUp) {
+                 topMargin = '0.17rem';
+              } else {
+                 const card = el.closest('.cl-card');
+                 const titleStr = card?.querySelector('.cl-headerTitle')?.textContent?.trim()?.toUpperCase();
+                 if (titleStr === 'SIGN IN TO THE GALLERY') {
+                    topMargin = '1.5rem';
+                 } else if (titleStr === 'ENTER YOUR PASSWORD') {
+                    topMargin = '0.75rem';
+                 }
+              }
+              cancelBtn.style.marginTop = topMargin;
               cancelBtn.style.marginBottom = '0';
               
               cancelBtn.onmouseenter = () => {
