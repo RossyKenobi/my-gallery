@@ -198,11 +198,11 @@ if (currentUserId) {
     
     <!-- Invite Modal -->
     <div class="modal-overlay" id="invite-modal">
-      <div class="modal-content" style="max-width: 500px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: 250px;">
-        <h3 class="modal-title" style="margin-bottom: 0;">Invitation</h3>
+      <div class="modal-content" style="max-width: 400px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: 200px;">
+        <h3 class="modal-title" style="margin-bottom: 0; font-family: 'Montserrat', sans-serif; letter-spacing: 0.1em; font-weight: 400; text-transform: uppercase;">Invitation</h3>
         
         <div style="width: 100%; position: relative; margin: 2rem 0;">
-          <input type="text" id="invite-input" placeholder="Enter Invitation Code" style="background: transparent; border: 1px solid rgba(237,237,237,0.15); border-radius: 40px; padding: 0.75rem 1.25rem; width: 100%; font-size: 1rem; color: white; outline: none; transition: border-color 0.3s; text-align: center; font-family: inherit; letter-spacing: 0.1em; box-sizing: border-box;" />
+          <input type="text" id="invite-input" placeholder="Enter Invitation Code" style="background: transparent; border: none; padding: 0.75rem 0; width: 100%; font-size: 1rem; color: white; outline: none; text-align: center; font-family: inherit; letter-spacing: 0.1em;" />
           <div id="invite-error-msg" style="position: absolute; width: 100%; text-align: center; color: #e11d48; font-size: 0.8rem; bottom: -1.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none;">Invalid Code</div>
         </div>
 
@@ -215,7 +215,18 @@ if (currentUserId) {
     
     <!-- Custom Signup Modal container for generic mounting -->
     <div class="modal-overlay" id="custom-signup-modal" style="z-index: 2000;">
-      <div id="clerk-signup-mount" style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;"></div>
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 1.5rem;">
+        <div id="clerk-signup-mount"></div>
+        <button class="action-btn" id="close-signup-btn">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Custom Signin Modal container -->
+    <div class="modal-overlay" id="custom-signin-modal" style="z-index: 2000;">
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 1.5rem;">
+        <div id="clerk-signin-mount"></div>
+        <button class="action-btn" id="close-signin-btn">Cancel</button>
+      </div>
     </div>
 
     <!-- File inputs OUTSIDE all modals to prevent file picker from closing modals -->
@@ -1110,36 +1121,44 @@ if (currentUserId) {
         });
       }
 
-      // --- Custom Clerk Native Modal ---
+      // --- Custom Clerk SignIn Mount ---
+      const signinModal = document.getElementById('custom-signin-modal');
+      const closeSigninBtn = document.getElementById('close-signin-btn');
+      
+      closeSigninBtn?.addEventListener('click', () => {
+        closeModal(signinModal);
+      });
+
       document.getElementById('custom-login-btn')?.addEventListener('click', (e) => {
         e.preventDefault();
-        window.Clerk.openSignIn({
-          signUpUrl: '/sign-up',
-          afterSignInUrl: window.location.href,
-          afterSignUpUrl: window.location.href,
-          appearance: {
-            variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: '#0a0a0a', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
-            elements: {
-              cardBox: { backgroundColor: 'rgba(0, 0, 0, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', borderRadius: '24px' },
-              card: { backgroundColor: 'transparent', border: 'none', boxShadow: 'none' },
-              headerTitle: { color: '#ededed', fontFamily: "'Montserrat', sans-serif", letterSpacing: '0.1em', fontWeight: '400', textTransform: 'uppercase' },
-              headerSubtitle: { display: 'none' },
-              socialButtonsBlockButton: { border: '1px solid rgba(237, 237, 237, 0.2)', borderRadius: '40px', color: '#ededed' },
-              socialButtonsBlockButtonText: { color: '#ededed' },
-              dividerLine: { background: 'rgba(237,237,237,0.1)' },
-              dividerText: { color: 'rgba(237,237,237,0.5)' },
-              formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
-              formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
-              formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
-              formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
-              footer: { background: 'transparent' },
-              footerActionText: { color: 'rgba(237,237,237,0.5)' },
-              footerActionLink: { color: '#ededed', fontWeight: '500' },
-              identityPreviewText: { color: '#ededed' },
-              identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
+        openModal(signinModal);
+        if (window.Clerk) {
+          window.Clerk.mountSignIn(document.getElementById('clerk-signin-mount'), {
+            signUpUrl: '/sign-up',
+            afterSignInUrl: window.location.href,
+            afterSignUpUrl: window.location.href,
+            appearance: {
+              variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: '#0a0a0a', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
+              elements: {
+                cardBox: { backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: 'none', borderRadius: '24px' },
+                card: { backgroundColor: 'transparent', border: 'none', boxShadow: 'none' },
+                headerTitle: { color: '#ededed', fontFamily: "'Montserrat', sans-serif", letterSpacing: '0.1em', fontWeight: '400', textTransform: 'uppercase' },
+                headerSubtitle: { display: 'none' },
+                socialButtonsBlockButton: { border: '1px solid rgba(237, 237, 237, 0.2)', borderRadius: '40px', color: '#ededed' },
+                socialButtonsBlockButtonText: { color: '#ededed' },
+                dividerLine: { background: 'rgba(237,237,237,0.1)' },
+                dividerText: { color: 'rgba(237,237,237,0.5)' },
+                formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
+                formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
+                formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
+                formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
+                footer: { display: 'none' },
+                identityPreviewText: { color: '#ededed' },
+                identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
+              }
             }
-          }
-        });
+          });
+        }
       });
 
       function attachGalleryListeners() {
@@ -1300,6 +1319,12 @@ if (currentUserId) {
 
       checkHashForInvite(); // On load
 
+      document.getElementById('close-signup-btn')?.addEventListener('click', () => {
+        const signupModal = document.getElementById('custom-signup-modal');
+        closeModal(signupModal);
+        originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
+      });
+
       cancelInviteBtn?.addEventListener('click', () => {
         closeModal(inviteModal);
         originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
@@ -1345,9 +1370,7 @@ if (currentUserId) {
                       formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
                       formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                       formButtonPrimary: { background: '#ededed', color: 'black', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', border: 'none', padding: '0.75rem 2rem' },
-                      footer: { background: 'transparent' },
-                      footerActionText: { color: 'rgba(237,237,237,0.5)' },
-                      footerActionLink: { color: '#ededed', fontWeight: '500' },
+                      footer: { display: 'none' },
                       identityPreviewText: { color: '#ededed' },
                       identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
                     }
@@ -1390,12 +1413,15 @@ if (currentUserId) {
       });
 
 
-      // Fix Clerk "Manage your account info." → "Manage account info."
+      // Fix Clerk "Manage your account info." → "Manage account info." and "MY-GALLERY" -> "THE GALLERY"
       const clerkTextObserver = new MutationObserver(() => {
         // Search broadly — Clerk nests text in various elements
-        document.querySelectorAll('[class*="cl-"] p, [class*="cl-"] span, [class*="cl-headerSubtitle"]').forEach(el => {
+        document.querySelectorAll('[class*="cl-"] p, [class*="cl-"] span, [class*="cl-headerSubtitle"], [class*="cl-headerTitle"]').forEach(el => {
           if (el.childElementCount === 0 && el.textContent?.trim() === 'Manage your account info.') {
             el.textContent = 'Manage account info.';
+          }
+          if (el.childElementCount === 0 && el.textContent?.includes('MY-GALLERY')) {
+            el.textContent = el.textContent.replace('MY-GALLERY', 'THE GALLERY');
           }
         });
       });
