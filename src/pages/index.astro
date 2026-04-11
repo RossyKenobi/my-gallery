@@ -1150,19 +1150,37 @@ if (currentUserId) {
                 formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
                 formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                 formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
-                formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem', marginBottom: '0' },
-                footer: { background: 'transparent', padding: '0.75rem 2rem', marginTop: '0' },
-                footerAction: { marginTop: '0', paddingTop: '0' },
-                footerActionText: { color: 'rgba(237,237,237,0.5)', marginBottom: '0' },
-                footerActionLink: { color: '#ededed', fontWeight: '500', marginBottom: '0' },
+                formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
+                footer: { background: 'transparent' },
+                footerActionText: { color: 'rgba(237,237,237,0.5)' },
+                footerActionLink: { color: '#ededed', fontWeight: '500' },
                 identityPreviewText: { color: '#ededed' },
                 identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' },
                 form: { marginBottom: '0' },
                 alternativeMethodsBlockButton: { border: '1px solid rgba(237, 237, 237, 0.2)', borderRadius: '40px', color: '#ededed', background: 'transparent' },
-                alternativeMethodsBlockButtonText: { color: '#ededed', fontFamily: "'Montserrat', sans-serif" }
+                alternativeMethodsBlockButtonText: { color: '#ededed', fontFamily: "'Montserrat', sans-serif" },
+                backLink: { color: 'rgba(237,237,237,0.7)' }
               }
             }
           });
+
+          // Inject CSS overrides to nuke ALL Clerk internal spacing
+          if (!document.getElementById('clerk-signin-styles')) {
+            const cs = document.createElement('style');
+            cs.id = 'clerk-signin-styles';
+            cs.textContent = `
+              #clerk-signin-mount .cl-formButtonPrimary { margin-bottom: 0 !important; }
+              #clerk-signin-mount form { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+              #clerk-signin-mount .cl-main { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+              #clerk-signin-mount .cl-card { padding-bottom: 0 !important; }
+              #clerk-signin-mount .cl-cardBox { padding-bottom: 0.5rem !important; }
+              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem !important; }
+              #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; }
+              #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; }
+              #clerk-signin-mount .cl-backLink { margin: 0 !important; }
+            `;
+            document.head.appendChild(cs);
+          }
         }
       });
 
@@ -1444,47 +1462,47 @@ if (currentUserId) {
             } else if (text === 'Get help' && el.tagName === 'A') {
               el.setAttribute('href', 'mailto:smyfy1@outlook.com');
               el.onclick = (e) => { e.stopPropagation(); };
-            } else if (text === 'Back' && el.tagName === 'BUTTON') {
+            } else if (text === 'Back') {
                el.style.color = '#ededed';
                el.style.textTransform = 'uppercase';
                el.style.letterSpacing = '0.1em';
                el.style.opacity = '0.7';
                el.style.fontSize = '0.8rem';
                el.style.background = 'transparent';
+            } else if (text === 'Reset your password') {
+               const resetBtn = el.closest('button') || el;
+               resetBtn.style.background = 'transparent';
+               resetBtn.style.color = '#ededed';
+               resetBtn.style.border = '1px solid rgba(237,237,237,0.2)';
             }
           }
 
-          // Dynamic header spacing for Use Another Method
+          // Force consistent spacing on Clerk elements (belt-and-suspenders with CSS)
+          if (el.classList.contains('cl-main')) {
+            el.style.setProperty('margin-bottom', '0', 'important');
+            el.style.setProperty('padding-bottom', '0', 'important');
+          }
+          if (el.classList.contains('cl-footer')) {
+            el.style.setProperty('margin-top', '0', 'important');
+            el.style.setProperty('padding', '0.75rem 2rem', 'important');
+          }
+
+          // Per-view header spacing for symmetry
           if (el.classList.contains('cl-headerTitle')) {
+            const title = (el.textContent || '').trim().toUpperCase();
             const header = el.closest('.cl-header');
-            const card = el.closest('.cl-card');
-            if (header && card) {
-              if (el.textContent?.trim().toUpperCase() === 'USE ANOTHER METHOD') {
-                header.style.marginBottom = '1rem';
-                const mainBody = card.querySelector('.cl-main');
-                if (mainBody) mainBody.style.marginBottom = '0';
-                const footer = card.querySelector('.cl-footer');
-                if (footer) {
-                   footer.style.setProperty('padding', '1.5rem 2rem', 'important');
-                   footer.style.setProperty('margin-top', '0', 'important');
-                }
-              } else {
-                header.style.marginBottom = '';
-                const mainBody = card.querySelector('.cl-main');
-                if (mainBody) mainBody.style.marginBottom = '';
-                const footer = card.querySelector('.cl-footer');
-                if (footer) {
-                   footer.style.removeProperty('padding');
-                   footer.style.removeProperty('margin-top');
-                }
+            if (header) {
+              if (title === 'USE ANOTHER METHOD' || title.includes('FORGOT PASSWORD')) {
+                header.style.marginBottom = '0.75rem';
               }
             }
           }
           
-          // 2. Hide SVG arrows inside primary buttons, and inject transparent matching CANCEL button immediately under the primary CONTINUE/Sign Up button
+          // Hide SVG arrows inside primary buttons and inject CANCEL button
           if (el.classList.contains('cl-formButtonPrimary')) {
             const svgIcon = el.querySelector('svg');
             if (svgIcon) svgIcon.style.display = 'none';
+            el.style.setProperty('margin-bottom', '0', 'important');
 
             const formContainer = el.closest('form');
             if (formContainer && !formContainer.querySelector('.custom-cancel-btn')) {
@@ -1493,7 +1511,6 @@ if (currentUserId) {
               cancelBtn.className = 'custom-cancel-btn';
               cancelBtn.textContent = 'CANCEL';
               
-              // Base button styles matching formButtonPrimary layout but with transparent outline
               cancelBtn.style.background = 'transparent';
               cancelBtn.style.color = '#ededed';
               cancelBtn.style.border = '1px solid rgba(237,237,237,0.2)';
@@ -1509,7 +1526,7 @@ if (currentUserId) {
               cancelBtn.style.transition = 'all 0.3s ease';
 
               const isSignUp = el.closest('#clerk-signup-mount');
-              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '0.35rem';
+              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '1rem';
               cancelBtn.style.marginBottom = '0';
               
               cancelBtn.onmouseenter = () => {
