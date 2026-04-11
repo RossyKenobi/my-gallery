@@ -198,7 +198,7 @@ if (currentUserId) {
     
     <!-- Invite Modal -->
     <div class="modal-overlay" id="invite-modal">
-      <div class="modal-content" style="max-width: 400px; padding: 2.5rem 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: auto;">
+      <div class="modal-content" style="max-width: 400px; padding: 1.5rem 2.5rem 3rem 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: auto;">
         <h3 class="modal-title" style="margin-bottom: 0; font-family: 'Montserrat', sans-serif; letter-spacing: 0.1em; font-weight: 400; text-transform: uppercase;">Invitation</h3>
         
         <div style="width: 100%; position: relative; margin: 1.5rem 0;">
@@ -1150,7 +1150,8 @@ if (currentUserId) {
                 formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                 formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
                 formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
-                footer: { background: 'transparent', padding: '1.25rem 2rem 1.25rem 2rem' },
+                footer: { background: 'transparent', padding: '0 2rem 2rem 2rem' },
+                footerAction: { marginTop: '0.25rem', paddingTop: '0' },
                 footerActionText: { color: 'rgba(237,237,237,0.5)', marginBottom: '0' },
                 footerActionLink: { color: '#ededed', fontWeight: '500', marginBottom: '0' },
                 identityPreviewText: { color: '#ededed' },
@@ -1447,6 +1448,7 @@ if (currentUserId) {
               // Base button styles matching formButtonPrimary layout but with transparent outline
               cancelBtn.style.background = 'transparent';
               cancelBtn.style.color = '#ededed';
+              cancelBtn.style.color = '#ededed';
               cancelBtn.style.border = '1px solid rgba(237,237,237,0.2)';
               cancelBtn.style.borderRadius = '40px';
               cancelBtn.style.padding = '0.75rem 2rem';
@@ -1461,6 +1463,7 @@ if (currentUserId) {
 
               const isSignUp = el.closest('#clerk-signup-mount');
               cancelBtn.style.marginTop = isSignUp ? '0.5rem' : '0.75rem';
+              cancelBtn.style.marginBottom = isSignUp ? '0' : '0.25rem';
               
               cancelBtn.onmouseenter = () => {
                 cancelBtn.style.background = 'rgba(255,255,255,0.05)';
