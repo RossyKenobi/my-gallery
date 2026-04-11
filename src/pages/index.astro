@@ -1230,7 +1230,7 @@ if (currentUserId) {
               #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; text-align: center !important; }
               #clerk-signin-mount .cl-footerActionLink { margin-left: 0.25em !important; }
               #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; text-align: center !important; }
-              #clerk-signin-mount .cl-backLink { margin: 0 0 1.25rem 0 !important; display: block !important; width: 100% !important; text-align: center !important; }
+              #clerk-signin-mount .cl-backLink { margin: 0 0 1.75rem 0 !important; display: block !important; width: 100% !important; text-align: center !important; }
             `;
             document.head.appendChild(cs);
           }
@@ -1550,10 +1550,12 @@ if (currentUserId) {
             // Per-view footer padding
             const card = el.closest('.cl-card');
             const title = card?.querySelector('.cl-headerTitle')?.textContent?.trim()?.toUpperCase() || '';
-            if (title === 'USE ANOTHER METHOD' || title.includes('FORGOT PASSWORD')) {
-              el.style.setProperty('padding', '0.5rem 2rem', 'important');
+            if (title === 'USE ANOTHER METHOD' || title.startsWith('FORGOT')) {
+              el.style.setProperty('padding', '0.75rem 2rem', 'important');
+            } else if (title.includes('PASSWORD') || title.includes('CHECK')) {
+              el.style.setProperty('padding', '0.1rem 2rem 0.4rem 2rem', 'important');
             } else {
-              el.style.setProperty('padding', '0.25rem 2rem', 'important');
+              el.style.setProperty('padding', '0.5rem 2rem', 'important');
             }
           }
 
