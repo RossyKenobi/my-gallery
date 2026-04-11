@@ -215,17 +215,21 @@ if (currentUserId) {
     
     <!-- Custom Signup Modal container for generic mounting -->
     <div class="modal-overlay" id="custom-signup-modal" style="z-index: 2000;">
-      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 1.5rem;">
-        <div id="clerk-signup-mount"></div>
-        <button class="action-btn" id="close-signup-btn">Cancel</button>
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="position: relative;">
+          <div id="clerk-signup-mount"></div>
+          <button id="close-signup-btn" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.1rem; font-weight: 300; cursor: pointer; transition: color 0.3s; z-index: 2010; padding: 0.5rem; line-height: 1; font-family: sans-serif;">&#x2715;</button>
+        </div>
       </div>
     </div>
 
     <!-- Custom Signin Modal container -->
     <div class="modal-overlay" id="custom-signin-modal" style="z-index: 2000;">
-      <button id="close-signin-btn" style="position: absolute; top: 2rem; right: 2.5rem; background: transparent; border: none; color: white; font-size: 2.5rem; font-weight: 300; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; z-index: 2010; line-height: 1; padding: 0;">&times;</button>
-      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 1.5rem;">
-        <div id="clerk-signin-mount"></div>
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="position: relative;">
+          <div id="clerk-signin-mount"></div>
+          <button id="close-signin-btn" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.1rem; font-weight: 300; cursor: pointer; transition: color 0.3s; z-index: 2010; padding: 0.5rem; line-height: 1; font-family: sans-serif;">&#x2715;</button>
+        </div>
       </div>
     </div>
 
@@ -1152,11 +1156,12 @@ if (currentUserId) {
                 formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                 formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
                 formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
-                footer: { background: 'transparent' },
-                footerActionText: { color: 'rgba(237,237,237,0.5)' },
-                footerActionLink: { color: '#ededed', fontWeight: '500' },
+                footer: { background: 'transparent', padding: '0.5rem 2rem 2rem 2rem' },
+                footerActionText: { color: 'rgba(237,237,237,0.5)', marginBottom: '0' },
+                footerActionLink: { color: '#ededed', fontWeight: '500', marginBottom: '0' },
                 identityPreviewText: { color: '#ededed' },
-                identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
+                identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' },
+                form: { marginBottom: '0' }
               }
             }
           });
