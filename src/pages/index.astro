@@ -495,18 +495,6 @@ if (currentUserId) {
       const confirmDiscardBtn = document.getElementById('confirm-discard-btn');
       const cancelDiscardBtn = document.getElementById('cancel-discard-btn');
 
-      // Protect against rogue Clerk hosted UI redirects
-      const originalAssign = window.location.assign;
-      window.location.assign = function(url) {
-        if (typeof url === 'string' && (url.includes('/sign-up') || url.includes('.clerk.accounts'))) {
-           const signinModal = document.getElementById('custom-signin-modal');
-           if (signinModal) closeModal(signinModal);
-           window.location.hash = '#invite';
-           return;
-        }
-        originalAssign.call(this, url);
-      };
-
       // Invite Modal elements
       const inviteModal = document.getElementById('invite-modal');
       const verifyInviteBtn = document.getElementById('verify-invite-btn');
