@@ -1150,7 +1150,7 @@ if (currentUserId) {
                 formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                 formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
                 formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
-                footer: { background: 'transparent', padding: '1.5rem 2rem 2rem 2rem' },
+                footer: { background: 'transparent', padding: '0.5rem 2rem 1rem 2rem' },
                 footerActionText: { color: 'rgba(237,237,237,0.5)', marginBottom: '0' },
                 footerActionLink: { color: '#ededed', fontWeight: '500', marginBottom: '0' },
                 identityPreviewText: { color: '#ededed' },
@@ -1282,6 +1282,8 @@ if (currentUserId) {
 
       // --- Invite Modal Logic ---
       function showInviteModal() {
+        const signinModal = document.getElementById('custom-signin-modal');
+        if (signinModal) closeModal(signinModal);
         if (window.Clerk && window.Clerk.closeSignIn) {
           window.Clerk.closeSignIn();
         }
@@ -1430,8 +1432,11 @@ if (currentUserId) {
             }
           }
           
-          // 2. Inject transparent matching CANCEL button immediately under the primary CONTINUE/Sign Up button
+          // 2. Hide SVG arrows inside primary buttons, and inject transparent matching CANCEL button immediately under the primary CONTINUE/Sign Up button
           if (el.classList.contains('cl-formButtonPrimary')) {
+            const svgIcon = el.querySelector('svg');
+            if (svgIcon) svgIcon.style.display = 'none';
+
             const formContainer = el.closest('form');
             if (formContainer && !formContainer.querySelector('.custom-cancel-btn')) {
               const cancelBtn = document.createElement('button');
