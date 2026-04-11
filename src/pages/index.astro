@@ -511,6 +511,42 @@ if (currentUserId) {
       const miniImportBtn = document.getElementById('mini-import-btn');
       const miniFileInput = document.getElementById('mini-file-input');
 
+      // --- Navigation Interception: Block Clerk external redirects ---
+      (function() {
+        const isClerkRedirect = (url) => typeof url === 'string' && (url.includes('accounts.') || url.includes('clerk.') || url.includes('sign-up'));
+        try {
+          const origAssign = Location.prototype.assign;
+          Location.prototype.assign = function(url) {
+            if (isClerkRedirect(url)) { console.log('Blocked redirect:', url); return; }
+            return origAssign.call(this, url);
+          };
+          const origReplace = Location.prototype.replace;
+          Location.prototype.replace = function(url) {
+            if (isClerkRedirect(url)) { console.log('Blocked redirect:', url); return; }
+            return origReplace.call(this, url);
+          };
+        } catch(e) {}
+        const origOpen = window.open;
+        window.open = function(url, ...args) {
+          if (isClerkRedirect(url)) return null;
+          return origOpen.call(this, url, ...args);
+        };
+        if (window.navigation) {
+          window.navigation.addEventListener('navigate', (e) => {
+            if (isClerkRedirect(e.destination.url)) e.preventDefault();
+          });
+        }
+        // Fallback: if full page redirect happens, bounce back
+        window.addEventListener('beforeunload', () => {
+          const m = document.getElementById('custom-signin-modal');
+          if (m && m.classList.contains('active')) {
+            sessionStorage.setItem('clerk_bounce', window.location.href);
+          }
+        });
+        const bounce = sessionStorage.getItem('clerk_bounce');
+        if (bounce) { sessionStorage.removeItem('clerk_bounce'); }
+      })();
+
       // --- Modal Helpers ---
       const openModal = (modal) => {
         if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
@@ -1189,10 +1225,10 @@ if (currentUserId) {
               #clerk-signin-mount form div[class*="cl-internal"] { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-main { margin-bottom: 0 !important; padding-bottom: 0 !important; }
               #clerk-signin-mount .cl-card { padding-bottom: 0 !important; }
-              #clerk-signin-mount .cl-cardBox { padding-bottom: 0.5rem !important; }
-              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.75rem 2rem !important; text-align: center !important; }
-              #clerk-signin-mount .cl-footer > * { display: block !important; width: 100% !important; text-align: center !important; }
+              #clerk-signin-mount .cl-cardBox { padding-bottom: 0 !important; }
+              #clerk-signin-mount .cl-footer { margin-top: 0 !important; padding: 0.5rem 2rem 0.5rem 2rem !important; text-align: center !important; }
               #clerk-signin-mount .cl-footerAction { margin: 0 !important; padding: 0 !important; text-align: center !important; }
+              #clerk-signin-mount .cl-footerActionLink { margin-left: 0.25em !important; }
               #clerk-signin-mount .cl-alternativeMethods { margin: 0 !important; padding: 0 !important; text-align: center !important; }
               #clerk-signin-mount .cl-backLink { margin: 0 0 1.25rem 0 !important; display: block !important; width: 100% !important; text-align: center !important; }
             `;
@@ -1478,6 +1514,7 @@ if (currentUserId) {
               el.style.display = 'none';
             } else if (text === 'Get help' && el.tagName === 'A') {
               el.setAttribute('href', 'mailto:smyfy1@outlook.com');
+              el.style.marginLeft = '0.25em';
               el.onclick = (e) => { e.stopPropagation(); };
             } else if (text === 'Back') {
                el.style.color = '#ededed';
@@ -1547,7 +1584,7 @@ if (currentUserId) {
 
             // Place cancel button OUTSIDE the form, as sibling, for consistent gap
             const formContainer = el.closest('form');
-            const insertParent = formContainer?.closest('.cl-main') || formContainer?.parentElement;
+            const insertParent = formContainer?.closest('.cl-main') || el.closest('.cl-main') || el.parentElement;
             if (insertParent && !insertParent.querySelector('.custom-cancel-btn')) {
               const cancelBtn = document.createElement('button');
               cancelBtn.type = 'button';
@@ -1569,7 +1606,7 @@ if (currentUserId) {
               cancelBtn.style.transition = 'all 0.3s ease';
 
               const isSignUp = el.closest('#clerk-signup-mount');
-              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '1rem';
+              cancelBtn.style.marginTop = isSignUp ? '0.17rem' : '0.5rem';
               cancelBtn.style.marginBottom = '0';
               
               cancelBtn.onmouseenter = () => {
@@ -1584,19 +1621,19 @@ if (currentUserId) {
               cancelBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Find visible custom modal and close
                 const signinModal = document.getElementById('custom-signin-modal');
                 const signupModal = document.getElementById('custom-signup-modal');
                 if (signinModal) closeModal(signinModal);
                 if (signupModal) closeModal(signupModal);
-                // Clean URL hash state without triggering reload
                 const originalPushState = history.pushState || history.replaceState;
                 if (originalPushState) originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
               };
               
-              // Place it after the form, not inside it
+              // Place after form if exists, otherwise after button
               if (formContainer) {
                 insertParent.insertBefore(cancelBtn, formContainer.nextSibling);
+              } else {
+                el.parentNode.insertBefore(cancelBtn, el.nextSibling);
               }
             }
           }
