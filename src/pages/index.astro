@@ -216,20 +216,14 @@ if (currentUserId) {
     <!-- Custom Signup Modal container for generic mounting -->
     <div class="modal-overlay" id="custom-signup-modal" style="z-index: 2000;">
       <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="position: relative;">
-          <div id="clerk-signup-mount"></div>
-          <button id="close-signup-btn" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.1rem; font-weight: 300; cursor: pointer; transition: color 0.3s; z-index: 2010; padding: 0.5rem; line-height: 1; font-family: sans-serif;">&#x2715;</button>
-        </div>
+        <div id="clerk-signup-mount"></div>
       </div>
     </div>
 
     <!-- Custom Signin Modal container -->
     <div class="modal-overlay" id="custom-signin-modal" style="z-index: 2000;">
       <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="position: relative;">
-          <div id="clerk-signin-mount"></div>
-          <button id="close-signin-btn" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 1.1rem; font-weight: 300; cursor: pointer; transition: color 0.3s; z-index: 2010; padding: 0.5rem; line-height: 1; font-family: sans-serif;">&#x2715;</button>
-        </div>
+        <div id="clerk-signin-mount"></div>
       </div>
     </div>
 
@@ -1156,7 +1150,7 @@ if (currentUserId) {
                 formFieldInput: { background: 'transparent', border: '1px solid rgba(237,237,237,0.15)', borderRadius: '40px', color: '#ededed', padding: '0.75rem 1.25rem', outline: 'none', boxShadow: 'none' },
                 formFieldInputShowPasswordButton: { color: 'rgba(237,237,237,0.5)' },
                 formButtonPrimary: { background: '#ededed', color: '#0a0a0a', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', fontFamily: "'Montserrat', sans-serif", border: 'none', padding: '0.75rem 2rem', fontSize: '0.85rem' },
-                footer: { background: 'transparent', padding: '0.5rem 2rem 2rem 2rem' },
+                footer: { background: 'transparent', padding: '1.5rem 2rem 2rem 2rem' },
                 footerActionText: { color: 'rgba(237,237,237,0.5)', marginBottom: '0' },
                 footerActionLink: { color: '#ededed', fontWeight: '500', marginBottom: '0' },
                 identityPreviewText: { color: '#ededed' },
@@ -1420,10 +1414,10 @@ if (currentUserId) {
       });
 
 
-      // Fix Clerk "Manage your account info." → "Manage account info.", "MY-GALLERY" -> "THE GALLERY", hide "Last used"
+      // Fix Clerk texts and inject dynamic cancel button below primary actions
       const clerkTextObserver = new MutationObserver(() => {
-        // Search broadly — Clerk nests text in various elements
         document.querySelectorAll('[class*="cl-"]').forEach(el => {
+          // 1. Text overrides
           if (el.childElementCount === 0) {
             if (el.textContent?.trim() === 'Manage your account info.') {
               el.textContent = 'Manage account info.';
@@ -1433,6 +1427,58 @@ if (currentUserId) {
             }
             if (/last used/i.test(el.textContent)) {
               el.style.display = 'none';
+            }
+          }
+          
+          // 2. Inject transparent matching CANCEL button immediately under the primary CONTINUE/Sign Up button
+          if (el.classList.contains('cl-formButtonPrimary')) {
+            const formContainer = el.closest('form');
+            if (formContainer && !formContainer.querySelector('.custom-cancel-btn')) {
+              const cancelBtn = document.createElement('button');
+              cancelBtn.type = 'button';
+              cancelBtn.className = 'custom-cancel-btn';
+              cancelBtn.textContent = 'CANCEL';
+              
+              // Base button styles matching formButtonPrimary layout but with transparent outline
+              cancelBtn.style.background = 'transparent';
+              cancelBtn.style.color = '#ededed';
+              cancelBtn.style.border = '1px solid rgba(237,237,237,0.2)';
+              cancelBtn.style.borderRadius = '40px';
+              cancelBtn.style.padding = '0.75rem 2rem';
+              cancelBtn.style.width = '100%';
+              cancelBtn.style.marginTop = '0.75rem';
+              cancelBtn.style.textTransform = 'uppercase';
+              cancelBtn.style.letterSpacing = '0.15em';
+              cancelBtn.style.fontWeight = '500';
+              cancelBtn.style.cursor = 'pointer';
+              cancelBtn.style.fontSize = '0.85rem';
+              cancelBtn.style.fontFamily = "'Montserrat', sans-serif";
+              cancelBtn.style.transition = 'all 0.3s ease';
+              
+              cancelBtn.onmouseenter = () => {
+                cancelBtn.style.background = 'rgba(255,255,255,0.05)';
+                cancelBtn.style.borderColor = 'rgba(237,237,237,0.4)';
+              };
+              cancelBtn.onmouseleave = () => {
+                cancelBtn.style.background = 'transparent';
+                cancelBtn.style.borderColor = 'rgba(237,237,237,0.2)';
+              };
+              
+              cancelBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Find visible custom modal and close
+                const signinModal = document.getElementById('custom-signin-modal');
+                const signupModal = document.getElementById('custom-signup-modal');
+                if (signinModal) closeModal(signinModal);
+                if (signupModal) closeModal(signupModal);
+                // Clean URL hash state without triggering reload
+                const originalPushState = history.pushState || history.replaceState;
+                if (originalPushState) originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
+              };
+              
+              // Place it exactly after the primary button
+              el.parentNode.insertBefore(cancelBtn, el.nextSibling);
             }
           }
         });
