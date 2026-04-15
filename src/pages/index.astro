@@ -392,10 +392,10 @@ if (currentUserId) {
             const scrollY = window.scrollY;
             const viewportHeight = window.innerHeight;
             const progress = Math.min(scrollY / (viewportHeight * 0.8), 1);
-            const opacity = 0 + (progress * 0.30); // 最大透明度变暗至 30% (之前是 0.35基准+0.25)
+            const opacity = 0.1 + (progress * 0.2); // 起步 0.1，最大至 0.3
             heroOverlay.style.background = `rgba(0, 0, 0, ${opacity})`;
-            heroOverlay.style.backdropFilter = `blur(${progress * 10}px)`; // 模糊最大值为 10px
-            heroOverlay.style.webkitBackdropFilter = `blur(${progress * 10}px)`;
+            heroOverlay.style.backdropFilter = `blur(${progress * 5}px)`; // 模糊最大值为 5px
+            heroOverlay.style.webkitBackdropFilter = `blur(${progress * 5}px)`;
 
             if (minimalNav) {
               const navTransitionThreshold = viewportHeight * 0.66;
@@ -424,7 +424,7 @@ if (currentUserId) {
           isTicking = true;
         }
       });
-      heroOverlay.style.background = `rgba(0, 0, 0, 0)`;
+      heroOverlay.style.background = `rgba(0, 0, 0, 0.1)`;
       heroOverlay.style.backdropFilter = `blur(0px)`;
       heroOverlay.style.webkitBackdropFilter = `blur(0px)`;
 
