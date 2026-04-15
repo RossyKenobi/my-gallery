@@ -392,7 +392,7 @@ if (currentUserId) {
             const scrollY = window.scrollY;
             const viewportHeight = window.innerHeight;
             const progress = Math.min(scrollY / (viewportHeight * 0.8), 1);
-            const opacity = 0.1 + (progress * 0.2); // 起步 0.1，最大至 0.3
+            const opacity = 0.2 + (progress * 0.1); // 起步 0.2，最大至 0.3
             heroOverlay.style.background = `rgba(0, 0, 0, ${opacity})`;
             heroOverlay.style.backdropFilter = `blur(${progress * 5}px)`; // 模糊最大值为 5px
             heroOverlay.style.webkitBackdropFilter = `blur(${progress * 5}px)`;
@@ -401,8 +401,8 @@ if (currentUserId) {
               const navTransitionThreshold = viewportHeight * 0.66;
               const navProgress = Math.min(scrollY / navTransitionThreshold, 1);
               minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.05})`;
-              minimalNav.style.backdropFilter = `blur(${navProgress * 5}px)`;
-              minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 5}px)`;
+              minimalNav.style.backdropFilter = `blur(${navProgress * 2}px)`;
+              minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 2}px)`;
               if (scrollY > 20) minimalNav.classList.add('is-scrolled');
               else minimalNav.classList.remove('is-scrolled');
 
@@ -410,8 +410,8 @@ if (currentUserId) {
               const userMenu = document.getElementById('user-menu-popover');
               if (userMenu) {
                 userMenu.style.background = `rgba(0, 0, 0, ${navProgress * 0.05})`;
-                userMenu.style.backdropFilter = `blur(${navProgress * 5}px)`;
-                userMenu.style.webkitBackdropFilter = `blur(${navProgress * 5}px)`;
+                userMenu.style.backdropFilter = `blur(${navProgress * 2}px)`;
+                userMenu.style.webkitBackdropFilter = `blur(${navProgress * 2}px)`;
               }
             }
 
@@ -424,7 +424,7 @@ if (currentUserId) {
           isTicking = true;
         }
       });
-      heroOverlay.style.background = `rgba(0, 0, 0, 0.1)`;
+      heroOverlay.style.background = `rgba(0, 0, 0, 0.2)`;
       heroOverlay.style.backdropFilter = `blur(0px)`;
       heroOverlay.style.webkitBackdropFilter = `blur(0px)`;
 
@@ -444,8 +444,8 @@ if (currentUserId) {
             const vh = window.innerHeight;
             const prog = Math.min(window.scrollY / (vh * 0.66), 1);
             userMenuPopover.style.background = `rgba(0, 0, 0, ${prog * 0.05})`;
-            userMenuPopover.style.backdropFilter = `blur(${prog * 5}px)`;
-            userMenuPopover.style.webkitBackdropFilter = `blur(${prog * 5}px)`;
+            userMenuPopover.style.backdropFilter = `blur(${prog * 2}px)`;
+            userMenuPopover.style.webkitBackdropFilter = `blur(${prog * 2}px)`;
           }
         });
 
