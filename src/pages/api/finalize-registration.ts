@@ -34,12 +34,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
     const clerkUser = await clerkRes.json();
     const email = clerkUser.email_addresses?.[0]?.email_address || '';
+    const username = clerkUser.username || null;
 
     // Create user record in Postgres
     await sql`
-      INSERT INTO users (clerk_id, email, is_admin, created_at)
-      VALUES (${auth.userId}, ${email}, ${isRootAdmin}, NOW())
-      ON CONFLICT (clerk_id) DO UPDATE SET is_admin = CASE WHEN ${isRootAdmin} THEN true ELSE users.is_admin END, email = ${email}
+      INSERT INTO users (clerk_id, email, username, is_admin, created_at)
+      VALUES (${auth.userId}, ${email}, ${username}, ${isRootAdmin}, NOW())
+      ON CONFLICT (clerk_id) DO UPDATE SET is_admin = CASE WHEN ${isRootAdmin} THEN true ELSE users.is_admin END, email = ${email}, username = COALESCE(${username}, users.username)
     `;
 
     return new Response(JSON.stringify({ success: true, isAdmin: isRootAdmin }), { status: 200 });

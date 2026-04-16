@@ -23,8 +23,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const nextSort = maxSort[0].max_sort + 1;
 
     await sql`
-      INSERT INTO stacks (id, caption, author, category, is_portrait, hidden, sort_order, owner_clerk_id, created_at)
-      VALUES (${id}, ${caption || ''}, ${author || ''}, ${category || 'General'}, ${isPortrait || false}, ${hidden || false}, ${nextSort}, ${auth.userId}, NOW())
+      INSERT INTO stacks (id, caption, author, category, is_portrait, hidden, sort_order, personal_sort_order, owner_clerk_id, created_at)
+      VALUES (${id}, ${caption || ''}, ${author || ''}, ${category || 'General'}, ${isPortrait || false}, ${hidden || false}, ${nextSort}, ${nextSort}, ${auth.userId}, NOW())
       ON CONFLICT (id) DO NOTHING
     `;
 

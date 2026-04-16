@@ -8,7 +8,7 @@ export default defineConfig({
   integrations: [clerk()],
   vite: {
     ssr: {
-      noExternal: ['cookie', 'nanoid', 'clsx', '@clerk/astro'],
+      noExternal: ['nanoid', 'clsx', '@clerk/astro'],
     },
   },
 });

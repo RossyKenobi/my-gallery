@@ -1,0 +1,443 @@
+---
+export const prerender = false;
+import '../../styles/global.css';
+import GalleryShared from '../../components/GalleryShared.astro';
+import { getUserByUsername, getRedirect, isAdmin, ensureUser } from '../../lib/auth';
+
+const { username } = Astro.params;
+
+if (!username) {
+  return Astro.redirect('/404', 302);
+}
+
+// Step 1: Look up user by username
+let pageOwner = await getUserByUsername(username);
+
+// Step 2: If not found, check redirects
+if (!pageOwner) {
+  const newUsername = await getRedirect(username);
+  if (newUsername) {
+    return Astro.redirect(`/u/${newUsername}`, 301);
+  }
+  return Astro.redirect('/404', 302);
+}
+
+// Step 3: Get current visitor's auth
+const auth = Astro.locals.auth();
+const currentUserId = auth?.userId || null;
+const isOwner = currentUserId === pageOwner.clerk_id;
+
+let isCurrentUserAdmin = false;
+let currentUsername = '';
+let currentUsernameLower = '';
+if (currentUserId) {
+  isCurrentUserAdmin = await isAdmin(currentUserId);
+  const dbUser = await ensureUser(currentUserId);
+  currentUsernameLower = dbUser?.username || '';
+  try {
+    const user = await Astro.locals.currentUser();
+    currentUsername = (user?.username || user?.firstName || 'User').toUpperCase();
+  } catch { currentUsername = 'USER'; }
+}
+
+const pageTitle = pageOwner.profile_title || `${username.toUpperCase()}'s Page`;
+const pageSubtitle = pageOwner.profile_subtitle || 'Selected Works';
+const backgroundUrl = pageOwner.background_url || null;
+const showOnboarding = !backgroundUrl && isOwner;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle} — THE GALLERY</title>
+    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="minimal-nav">
+      <a href="/" class="nav-brand">THE GALLERY</a>
+      <div class="nav-links">
+        <a href="#contact" class="nav-link">Contact</a>
+        { !currentUserId ? (
+          <button class="nav-link" id="custom-login-btn">Login</button>
+        ) : (
+          <div class="user-menu-wrapper" style="position: relative;">
+            <button class="nav-link user-menu-trigger" id="user-menu-trigger">{currentUsername}</button>
+            <div class="user-menu-popover" id="user-menu-popover">
+              {currentUsernameLower && currentUsernameLower !== username?.toLowerCase() && (
+                <a href={`/u/${currentUsernameLower}`} class="user-menu-item">My Page</a>
+              )}
+              <button class="user-menu-item" id="user-menu-manage">Account</button>
+              <button class="user-menu-item user-menu-signout" id="user-menu-signout">Sign out</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+
+    <!-- Profile Hero Section -->
+    <header class="profile-hero">
+      {backgroundUrl ? (
+        <img src={backgroundUrl} alt="Profile Background" class="profile-hero-bg" id="profile-hero-bg-img" />
+      ) : (
+        <img src="/images/hero_background.jpg" alt="Profile Background Default" class="profile-hero-bg" id="profile-hero-bg-img" />
+      )}
+      <div class="profile-hero-content" style="padding-top: 180px;">
+        <h1 class="hero-title" id="profile-title-edit" contenteditable={isOwner ? "true" : undefined} spellcheck="false" suppressContentEditableWarning="true" style={isOwner ? "cursor: text;" : ""}>{pageTitle}</h1>
+        <p class="hero-subtitle" id="profile-subtitle-edit" contenteditable={isOwner ? "true" : undefined} spellcheck="false" suppressContentEditableWarning="true" style={isOwner ? "cursor: text;" : ""}>{pageSubtitle}</p>
+      </div>
+    </header>
+
+    <GalleryShared 
+      isAuthenticated={!!currentUserId} 
+      showEditControls={isOwner || isCurrentUserAdmin} 
+      showInviteModal={false} 
+      showClerkModals={false} 
+      showChangeBgBtn={isOwner}
+    />
+
+    <section id="contact" class="contact-section">
+      <div class="contact-container">
+        <h2 class="contact-title">Contact</h2>
+        <div class="contact-list">
+          <div class="contact-item">
+            <svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <a href={`mailto:${pageOwner.email?.toUpperCase()}`}>{pageOwner.email?.toUpperCase() || 'NO EMAIL REGISTERED'}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer style="padding: 2rem 0 1rem; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; letter-spacing: 0.1rem;">
+      &copy; 2026 THE GALLERY BY F.Y.
+    </footer>
+
+    <!-- Background Upload Modal -->
+    {isOwner && (
+      <div class="modal-overlay" id="bg-upload-modal">
+        <div class="modal-content" style="max-width: 500px; transform: translateY(5vh);">
+          <h3 class="modal-title">SET BACKGROUND</h3>
+          <p class="modal-caption" style="margin-top: 2rem; margin-bottom: 1.5rem;">Set a background for your own page</p>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <label for="bg-file-input" class="action-btn confirm" style="cursor: pointer; display: inline-block;">Choose File</label>
+            <span id="bg-file-name" style="color: rgba(255,255,255,0.5); font-size: 0.8rem; letter-spacing: 0.1em;">No file chosen</span>
+          </div>
+          <div id="bg-preview-container" style="display: none; margin-bottom: 1.5rem;">
+            <img id="bg-preview-img" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px;" />
+          </div>
+          <div class="modal-actions" style="justify-content: center; gap: 1.5rem;">
+            <button class="action-btn" id="cancel-bg-upload">Cancel</button>
+            <button class="action-btn confirm" id="confirm-bg-upload">Upload</button>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="bg-file-input" accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0,0,0,0);" />
+    )}
+
+    <!-- Onboarding Modal -->
+    {showOnboarding && (
+      <div class="modal-overlay" id="onboarding-modal">
+        <div class="modal-content" style="max-width: 450px; transform: translateY(5vh);">
+          <h3 class="modal-title" style="letter-spacing: 0.15em;">WELCOME</h3>
+          <p class="modal-caption" style="margin-top: 2.5rem; margin-bottom: 2rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.6);">
+            Welcome to your own page! Set a background to start.
+          </p>
+          <div class="modal-actions" style="flex-direction: column; align-items: stretch; justify-content: center; gap: 1rem;">
+            <button class="action-btn confirm" id="onboarding-upload" style="width: 100%; white-space: nowrap;">Upload Background</button>
+            <button class="action-btn" id="onboarding-later" style="width: 100%; white-space: nowrap;">Set Later</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <style is:global>
+      /* --- Profile Page Specific Styles --- */
+      .profile-hero {
+        position: relative;
+        height: 48vh;
+        min-height: 380px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4rem; /* Lower gallery grid further */
+      }
+      .profile-hero-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        object-fit: cover;
+        object-position: center;
+        z-index: -2;
+      }
+      .hero-overlay-blur {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0);
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+        z-index: -1;
+        pointer-events: none;
+        transition: backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear, background 0.1s linear;
+      }
+      .profile-hero-default {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+      }
+      .profile-hero-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+      }
+      .profile-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: clamp(2.5rem, 6vw, 6rem);
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.05em;
+        margin: 0;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      }
+      [contenteditable="true"]:focus {
+        outline: none;
+      }
+      /* Inherit hero-title and hero-subtitle from global.css */
+      .profile-actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 1rem 4rem;
+        max-width: 1800px;
+        margin: 0 auto;
+      }
+
+      /* Edit mode styles */
+      body.is-editing .gallery-item-wrapper { cursor: grab; }
+      body.is-editing .sortable-ghost { opacity: 0.3; }
+      body.is-editing .sortable-drag { cursor: grabbing !important; }
+      body.is-editing .delete-btn {
+        display: flex !important;
+        opacity: 1 !important;
+        background: #ef4444 !important;
+        pointer-events: auto !important;
+      }
+      .hidden { display: none !important; }
+
+      /* PhotoSwipe */
+      .pswp__img {
+        border-radius: 4px;
+        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+      }
+      .pswp__item { padding: 0 10% !important; }
+
+      @media (max-width: 768px) {
+        .profile-actions-bar {
+          padding: 0.75rem 1.5rem;
+        }
+      }
+    </style>
+
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, pageOwner, showOnboarding }}>
+      window.__AUTH__ = {
+        userId: currentUserId,
+        isAdmin: isCurrentUserAdmin,
+      };
+      window.__PROFILE__ = {
+        isOwner: isOwner,
+        ownerClerkId: pageOwner.clerk_id,
+        showOnboarding: showOnboarding,
+      };
+    </script>
+    <script>
+      import { initGallery } from '../../scripts/gallery';
+      import { initUserMenu, initNavigationInterception, initClerkTextObserver, initClerkSignInAndInvite } from '../../scripts/clerk-auth';
+      import { initHeroScroll } from '../../scripts/hero-scroll';
+
+      const AUTH = (window as any).__AUTH__ || {};
+      const PROFILE = (window as any).__PROFILE__ || {};
+
+      // User menu & scroll
+      initUserMenu();
+      initNavigationInterception();
+      initClerkTextObserver();
+      initHeroScroll();
+      initClerkSignInAndInvite();
+
+      // Gallery (personal page mode)
+      initGallery({
+        mode: 'personal',
+        userId: AUTH.userId || null,
+        isAdmin: AUTH.isAdmin || false,
+        ownerClerkId: PROFILE.ownerClerkId,
+        canSort: PROFILE.isOwner || AUTH.isAdmin,
+        postsApiUrl: `/api/posts?owner=${PROFILE.ownerClerkId}&sort=personal`,
+        saveScope: 'personal',
+      });
+
+      // --- Onboarding Modal ---
+      if (PROFILE.showOnboarding && !localStorage.getItem('skip_bg_setup')) {
+        const onboardingModal = document.getElementById('onboarding-modal');
+        if (onboardingModal) {
+          onboardingModal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+
+          document.getElementById('onboarding-later')?.addEventListener('click', () => {
+            localStorage.setItem('skip_bg_setup', 'true');
+            onboardingModal.classList.remove('active');
+            document.body.style.overflow = '';
+          });
+
+          document.getElementById('onboarding-upload')?.addEventListener('click', () => {
+            onboardingModal.classList.remove('active');
+            document.body.style.overflow = '';
+            // Trigger background upload modal
+            const bgModal = document.getElementById('bg-upload-modal');
+            if (bgModal) {
+              bgModal.classList.add('active');
+              document.body.style.overflow = 'hidden';
+            }
+          });
+        }
+      }
+
+      // --- Background Upload Logic ---
+      if (PROFILE.isOwner) {
+        // Text editing logic
+        const titleEl = document.getElementById('profile-title-edit');
+        const subtitleEl = document.getElementById('profile-subtitle-edit');
+        let textTimeout: any;
+
+        const handleTextChange = () => {
+          clearTimeout(textTimeout);
+          textTimeout = setTimeout(async () => {
+            if (!titleEl || !subtitleEl) return;
+            try {
+              await fetch('/api/user/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: titleEl.innerText.trim(),
+                  subtitle: subtitleEl.innerText.trim()
+                })
+              });
+            } catch (e) {
+              console.error('Failed to save profile text', e);
+            }
+          }, 800);
+        };
+
+        titleEl?.addEventListener('input', handleTextChange);
+        subtitleEl?.addEventListener('input', handleTextChange);
+        
+        const preventEnter = (e: KeyboardEvent) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.target as HTMLElement).blur();
+          }
+        };
+        titleEl?.addEventListener('keydown', preventEnter);
+        subtitleEl?.addEventListener('keydown', preventEnter);
+
+        // Allow clicking outside to blur explicitly
+        document.addEventListener('click', (e) => {
+          if (titleEl && !titleEl.contains(e.target as Node) && 
+              subtitleEl && !subtitleEl.contains(e.target as Node)) {
+            titleEl.blur();
+            subtitleEl.blur();
+          }
+        });
+
+        // Upload logic
+        const bgModal = document.getElementById('bg-upload-modal');
+        const bgFileInput = document.getElementById('bg-file-input') as HTMLInputElement;
+        const bgFileName = document.getElementById('bg-file-name');
+        const bgPreviewContainer = document.getElementById('bg-preview-container');
+        const bgPreviewImg = document.getElementById('bg-preview-img') as HTMLImageElement;
+
+        document.getElementById('change-bg-btn')?.addEventListener('click', () => {
+          if (bgModal) {
+            bgModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          }
+        });
+
+        document.getElementById('cancel-bg-upload')?.addEventListener('click', () => {
+          if (bgModal) {
+            bgModal.classList.remove('active');
+            if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
+          }
+        });
+
+        bgFileInput?.addEventListener('change', () => {
+          if (bgFileInput.files && bgFileInput.files.length > 0) {
+            const file = bgFileInput.files[0];
+            if (bgFileName) bgFileName.textContent = file.name;
+            // Preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              if (bgPreviewImg) bgPreviewImg.src = e.target!.result as string;
+              if (bgPreviewContainer) bgPreviewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+
+        document.getElementById('confirm-bg-upload')?.addEventListener('click', async () => {
+          if (!bgFileInput?.files?.length) return;
+
+          const file = bgFileInput.files[0];
+          const formData = new FormData();
+          formData.append('file', file);
+
+          // Close modal, show progress
+          if (bgModal) {
+            bgModal.classList.remove('active');
+          }
+
+          const progressModal = document.getElementById('progress-modal');
+          const progressTitle = document.getElementById('progress-title');
+          const progressStatusText = document.getElementById('progress-status-text');
+          const progressBarInner = document.getElementById('progress-bar-inner');
+          const refreshBtn = document.getElementById('refresh-page-btn');
+
+          if (progressModal) {
+            progressModal.classList.add('active');
+            if (progressTitle) progressTitle.innerText = 'Uploading Background...';
+            if (progressStatusText) progressStatusText.innerText = 'Uploading to Server...';
+            if (progressBarInner) progressBarInner.style.width = '50%';
+          }
+
+          try {
+            const res = await fetch('/api/user/background', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await res.json();
+            if (res.ok && data.url) {
+              if (progressBarInner) progressBarInner.style.width = '100%';
+              if (progressStatusText) progressStatusText.innerText = 'Upload complete! Please refresh.';
+              if (refreshBtn) {
+                refreshBtn.style.display = 'block';
+                refreshBtn.classList.add('active');
+              }
+              localStorage.removeItem('skip_bg_setup');
+            } else {
+              if (progressStatusText) progressStatusText.innerText = 'Upload failed: ' + (data.error || 'Unknown error');
+            }
+          } catch (e: any) {
+            if (progressStatusText) progressStatusText.innerText = 'Upload error: ' + e.message;
+          }
+          if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
+        });
+      }
+    </script>
+  </body>
+</html>

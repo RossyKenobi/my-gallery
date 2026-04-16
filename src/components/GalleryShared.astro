@@ -1,0 +1,162 @@
+---
+/**
+ * GalleryShared.astro
+ * Shared HTML structure: gallery grid, bottom bar, all modals, and file inputs.
+ * Used by both index.astro and /u/[username].astro
+ */
+interface Props {
+  isAuthenticated: boolean;
+  showEditControls: boolean;
+  showInviteModal?: boolean;
+  showClerkModals?: boolean;
+  showChangeBgBtn?: boolean;
+}
+
+const { isAuthenticated, showEditControls, showInviteModal = false, showClerkModals = false, showChangeBgBtn = false } = Astro.props;
+---
+
+<!-- Gallery Grid -->
+<main class="gallery-grid" id="gallery">
+  <div class="gallery-loading" id="gallery-loading">
+    <div class="loading-spinner"></div>
+  </div>
+</main>
+
+<!-- Gallery Bottom Bar (Edit controls) -->
+<div class="gallery-bottom-bar" id="gallery-bottom-bar" style={(isAuthenticated && showEditControls) ? '' : 'display: none;'}>
+  <div class="edit-controls">
+    {showChangeBgBtn && <button class="action-btn" id="change-bg-btn" style="margin-right: 1rem;">Change Background</button>}
+    <button class="action-btn" id="open-edit-mode">Edit</button>
+    <div id="edit-actions" class="hidden">
+      <button class="action-btn" id="cancel-edits">Cancel</button>
+      <button class="action-btn confirm" id="add-new-post">Import</button>
+      <button class="action-btn confirm" id="save-edits">Done</button>
+    </div>
+  </div>
+</div>
+<div class="gallery-divider"></div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal-content">
+    <h3 class="modal-title" style="margin-bottom: 3rem; letter-spacing: 0.2em;">IMPORT NEW WORK</h3>
+
+    <div id="local-tab" class="tab-content active">
+      <div class="modal-input-group" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 1rem;">
+            <label for="local-file-input" class="action-btn confirm" style="cursor: pointer; display: inline-block;">Choose Files</label>
+            <span id="file-name-display" style="color: rgba(255,255,255,0.5); font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 300;">No file chosen</span>
+        </div>
+        <textarea id="local-caption-input" class="mini-caption-textarea" placeholder="Say Something?" rows="2"></textarea>
+        <div class="mini-author-group">
+          <span class="mini-author-label">BY</span>
+          <input type="text" id="local-author-input" class="mini-author-input" placeholder="J. Doe" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top: 1rem; justify-content: center; gap: 1.5rem;">
+      <button class="action-btn" id="close-import-modal">Cancel</button>
+      <button class="action-btn confirm" id="confirm-import">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mini Gallery Edit Modal -->
+<div class="modal-overlay" id="mini-gallery-modal">
+  <div class="modal-content">
+    <h3 class="modal-title">Edit Stack</h3>
+    <p class="modal-caption" style="margin-bottom: 0;">Drag to reorder, click × to delete</p>
+    <div id="mini-gallery-grid" class="mini-gallery-grid"></div>
+    <textarea id="mini-caption-input" class="mini-caption-textarea" placeholder="Say Something?" rows="2"></textarea>
+    <div class="mini-author-group">
+      <span class="mini-author-label">BY</span>
+      <input type="text" id="mini-author-input" class="mini-author-input" placeholder="J. Doe" />
+    </div>
+
+    <div class="modal-actions" style="margin-top: 2rem; justify-content: flex-end; gap: 1.5rem;">
+      <button class="action-btn" id="close-mini-gallery">Cancel</button>
+      <button class="action-btn confirm" id="mini-import-btn" style="color: black;">Import</button>
+      <button class="action-btn confirm" id="confirm-mini-gallery">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Discard Modal -->
+<div class="modal-overlay" id="confirm-discard-modal" style="z-index: 2000;">
+  <div class="modal-content">
+    <h3 class="modal-title">Discard Changes</h3>
+    <p class="modal-caption" style="margin-bottom: 2rem;">All unsaved changes will be discarded. Are you sure you want to cancel?</p>
+    <div class="modal-actions" style="justify-content: center; gap: 2rem; margin-top: 2rem;">
+      <button class="action-btn" id="cancel-discard-btn">No</button>
+      <button class="action-btn confirm" id="confirm-discard-btn" style="color: #e11d48;">Yes, Discard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="confirm-delete-modal" style="z-index: 2000;">
+  <div class="modal-content">
+    <h3 class="modal-title">Delete Stack</h3>
+    <p class="modal-caption" style="margin-bottom: 2rem;">Are you sure you want to delete this stack?<br>This action cannot be undone.</p>
+    <div class="modal-actions" style="justify-content: center; gap: 2rem; margin-top: 2rem;">
+      <button class="action-btn" id="cancel-delete-btn">Cancel</button>
+      <button class="action-btn confirm" id="confirm-delete-btn" style="color: #e11d48;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal-overlay" id="progress-modal">
+  <div class="modal-content">
+    <h3 class="modal-title" id="progress-title">Importing...</h3>
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar-inner"></div>
+    </div>
+    <p class="progress-status" id="progress-status-text">Preparing...</p>
+    <div class="modal-actions" style="justify-content: center; margin-top: 0.5rem;">
+      <button class="refresh-btn" id="refresh-page-btn">Refresh</button>
+    </div>
+  </div>
+</div>
+
+{showInviteModal && (
+  <!-- Invite Modal -->
+  <div class="modal-overlay" id="invite-modal">
+    <div class="modal-content" style="max-width: 400px; padding: 1.5rem 2.5rem 2rem 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: auto;">
+      <h3 class="modal-title" style="margin-bottom: 0; font-family: 'Montserrat', sans-serif; letter-spacing: 0.1em; font-weight: 400; text-transform: uppercase;">Invitation</h3>
+      
+      <div style="width: 100%; position: relative; margin: 1.5rem 0;">
+        <input type="text" id="invite-input" placeholder="Enter Invitation Code" style="background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 0; width: 100%; font-size: 1rem; color: white; outline: none; text-align: center; font-family: inherit; letter-spacing: 0.1em;" />
+        <div id="invite-error-msg" style="position: absolute; width: 100%; text-align: center; color: #e11d48; font-size: 0.8rem; bottom: -1.5rem; opacity: 0; transition: opacity 0.3s; pointer-events: none;">Invalid Code</div>
+      </div>
+
+      <div class="modal-actions" style="justify-content: center; gap: 2rem; margin-top: 0.5rem; width: 100%;">
+        <button class="action-btn" id="cancel-invite-btn">Cancel</button>
+        <button class="action-btn confirm" id="verify-invite-btn">Verify</button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showClerkModals && (
+  <Fragment>
+    <!-- Custom Signup Modal container -->
+    <div class="modal-overlay" id="custom-signup-modal" style="z-index: 2000;">
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div id="clerk-signup-mount"></div>
+      </div>
+    </div>
+
+    <!-- Custom Signin Modal container -->
+    <div class="modal-overlay" id="custom-signin-modal" style="z-index: 2000;">
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div id="clerk-signin-mount"></div>
+      </div>
+    </div>
+  </Fragment>
+)}
+
+<!-- File inputs OUTSIDE all modals to prevent file picker from closing modals -->
+<input type="file" id="local-file-input" multiple accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0,0,0,0);" />
+<input type="file" id="mini-file-input" multiple accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0,0,0,0);" />
