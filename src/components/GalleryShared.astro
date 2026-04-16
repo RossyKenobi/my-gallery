@@ -6,13 +6,13 @@
  */
 interface Props {
   isAuthenticated: boolean;
-  isAdmin: boolean;
+  showEditControls: boolean;
   showInviteModal?: boolean;
   showClerkModals?: boolean;
   showChangeBgBtn?: boolean;
 }
 
-const { isAuthenticated, isAdmin, showInviteModal = false, showClerkModals = false, showChangeBgBtn = false } = Astro.props;
+const { isAuthenticated, showEditControls, showInviteModal = false, showClerkModals = false, showChangeBgBtn = false } = Astro.props;
 ---
 
 <!-- Gallery Grid -->
@@ -23,7 +23,7 @@ const { isAuthenticated, isAdmin, showInviteModal = false, showClerkModals = fal
 </main>
 
 <!-- Gallery Bottom Bar (Edit controls) -->
-<div class="gallery-bottom-bar" id="gallery-bottom-bar" style={(isAuthenticated && isAdmin) ? '' : 'display: none;'}>
+<div class="gallery-bottom-bar" id="gallery-bottom-bar" style={(isAuthenticated && showEditControls) ? '' : 'display: none;'}>
   <div class="edit-controls">
     {showChangeBgBtn && <button class="action-btn" id="change-bg-btn" style="margin-right: 1rem;">Change Background</button>}
     <button class="action-btn" id="open-edit-mode">Edit</button>

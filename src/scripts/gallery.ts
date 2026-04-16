@@ -576,8 +576,9 @@ export function initGallery(config: GalleryConfig) {
   miniImportBtn = document.getElementById('mini-import-btn');
   miniFileInput = document.getElementById('mini-file-input') as HTMLInputElement;
 
-  // Show bottom bar if user can edit
-  if (config.canSort && galleryBottomBar) {
+  // Show bottom bar if user is authorized to see it based on mode
+  const canSeeEditControls = config.mode === 'main' ? !!config.userId : config.canSort;
+  if (canSeeEditControls && galleryBottomBar) {
     galleryBottomBar.style.display = 'flex';
   }
 

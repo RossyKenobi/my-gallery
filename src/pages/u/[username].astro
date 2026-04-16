@@ -93,7 +93,7 @@ const showOnboarding = !backgroundUrl && isOwner;
 
     <GalleryShared 
       isAuthenticated={!!currentUserId} 
-      isAdmin={isOwner || isCurrentUserAdmin} 
+      showEditControls={isOwner || isCurrentUserAdmin} 
       showInviteModal={false} 
       showClerkModals={false} 
       showChangeBgBtn={isOwner}
