@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { sql } from '../../../lib/db';
-import { isAdmin } from '../../../lib/auth';
+import { sql } from '../../lib/db';
+import { isAdmin } from '../../lib/auth';
 
 const BUCKET = 'my-gallery-images';
 
