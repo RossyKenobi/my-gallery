@@ -75,6 +75,16 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 - **Invitation System**: Added invitation-code registration gated by Clerk.
 - **Branding**: Official rebranding to **Silent Flânerie**.
 
+### v1.1.0
+- **R2 Cloud Migration**: Moved all image assets from the GitHub repository to **Cloudflare R2** object storage, enabling instant content updates without redeployment.
+- **Hybrid Rendering**: Refactored the core from a static site to a dynamic system capable of fetching data at runtime.
+- **On-the-fly Features**: Added client-side image compression and metadata handling for faster uploads.
+
+### v1.0.0
+- **Initial Release**: Minimalist Astro site with GitHub-hosted images.
+- **Foundation**: Established masonry grid layout, PhotoSwipe integration, and the project's signature dark aesthetic.
+- **Admin Start**: First iteration of drag-and-drop sorting via SortableJS.
+
 ---
 
 > [!IMPORTANT]
