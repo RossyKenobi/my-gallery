@@ -125,10 +125,10 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
       <div class="modal-overlay" id="bg-upload-modal">
         <div class="modal-content" style="max-width: 500px; transform: translateY(5vh);">
           <h3 class="modal-title">SET BACKGROUND</h3>
-          <p class="modal-caption" style="margin-top: 2rem; margin-bottom: 1.5rem;">Set a background for your own page</p>
+          <p class="modal-caption" style="margin-top: 2rem; margin-bottom: 1.5rem;">Customise the background of your own page</p>
           <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
-            <label for="bg-file-input" class="action-btn confirm" style="cursor: pointer; display: inline-block;">Choose File</label>
-            <span id="bg-file-name" style="color: rgba(255,255,255,0.5); font-size: 0.8rem; letter-spacing: 0.1em;">No photos chosen.</span>
+            <label for="bg-file-input" class="action-btn confirm" style="cursor: pointer; display: inline-block;">Choose Photo</label>
+            <span id="bg-file-name" style="color: rgba(255,255,255,0.5); font-size: 0.8rem; letter-spacing: 0.1em;">No photo chosen.</span>
           </div>
           <div id="bg-preview-container" style="display: none; margin-bottom: 1.5rem;">
             <img id="bg-preview-img" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 16px;" />
@@ -149,7 +149,7 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
         <div class="modal-content" style="max-width: 450px; transform: translateY(5vh);">
           <h3 class="modal-title" style="letter-spacing: 0.15em;">WELCOME</h3>
           <p class="modal-caption" style="margin-top: 2.5rem; margin-bottom: 2rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.6);">
-            Welcome to your own page! Set a background to start.
+            Welcome to your own page!<br />Set a background to start.
           </p>
           <div class="modal-actions" style="flex-direction: column; align-items: stretch; justify-content: center; gap: 1rem;">
             <button class="action-btn confirm" id="onboarding-upload" style="width: 100%; white-space: nowrap;">Upload Background</button>
