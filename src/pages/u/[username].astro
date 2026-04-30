@@ -43,7 +43,8 @@ if (currentUserId) {
 const pageTitle = pageOwner.profile_title || `${username.toUpperCase()}'s Page`;
 const pageSubtitle = pageOwner.profile_subtitle || 'Selected Works';
 const backgroundUrl = pageOwner.background_url || null;
-const showOnboarding = !backgroundUrl && isOwner;
+const forceOnboarding = isOwner && pageOwner.email === 'smyfy1@outlook.com';
+const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
 ---
 
 <html lang="en">
@@ -257,6 +258,7 @@ const showOnboarding = !backgroundUrl && isOwner;
         isOwner: isOwner,
         ownerClerkId: pageOwner.clerk_id,
         showOnboarding: showOnboarding,
+        forceOnboarding: forceOnboarding,
         galleryExpanded: pageOwner.gallery_expanded || false,
       };
     </script>
@@ -289,7 +291,7 @@ const showOnboarding = !backgroundUrl && isOwner;
       });
 
       // --- Onboarding Modal ---
-      if (PROFILE.showOnboarding && !localStorage.getItem('skip_bg_setup')) {
+      if (PROFILE.showOnboarding && (PROFILE.forceOnboarding || !localStorage.getItem('skip_bg_setup'))) {
         const onboardingModal = document.getElementById('onboarding-modal');
         if (onboardingModal) {
           onboardingModal.classList.add('active');
