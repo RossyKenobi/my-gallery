@@ -43,7 +43,8 @@ if (currentUserId) {
 const pageTitle = pageOwner.profile_title || `${username.toUpperCase()}'s Page`;
 const pageSubtitle = pageOwner.profile_subtitle || 'Selected Works';
 const backgroundUrl = pageOwner.background_url || null;
-const forceOnboarding = isOwner && pageOwner.email === 'smyfy1@outlook.com';
+// Force onboarding for smyfy1@outlook.com (clerk_id: user_3C2G0yGMMV74pCHcVG270RI2IhD)
+const forceOnboarding = isOwner && (pageOwner.clerk_id === 'user_3C2G0yGMMV74pCHcVG270RI2IhD' || pageOwner.email === 'smyfy1@outlook.com');
 const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
 ---
 
@@ -249,7 +250,7 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
       }
     </style>
 
-    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, pageOwner, showOnboarding }}>
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, pageOwner, showOnboarding, forceOnboarding }}>
       window.__AUTH__ = {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
