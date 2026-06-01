@@ -2,6 +2,7 @@
 export const prerender = false;
 import '../styles/global.css';
 import GalleryShared from '../components/GalleryShared.astro';
+import { ViewTransitions } from 'astro:transitions';
 
 const auth = Astro.locals.auth();
 const currentUserId = auth?.userId || null;
@@ -41,9 +42,10 @@ try {
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="generator" content={Astro.generator} />
     <title>THE GALLERY BY F.Y.</title>
+    <ViewTransitions />
     
     <!-- PWA / Offline Support -->
     <link rel="manifest" href="/manifest.json" />

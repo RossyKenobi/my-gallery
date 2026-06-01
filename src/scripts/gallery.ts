@@ -390,9 +390,18 @@ function renderExpandedGallery() {
         wrapper.classList.remove('is-portrait');
       }
     };
-    if (img.complete) setOrientation();
-    else img.addEventListener('load', setOrientation);
+    if (img.complete) {
+      setOrientation();
+      img.classList.add('loaded');
+    } else {
+      img.addEventListener('load', () => {
+        setOrientation();
+        img.classList.add('loaded');
+      });
+    }
   });
+
+  applyGalleryAnimations(galleryEl);
 }
 
 function attachExpandedListeners() {
@@ -468,6 +477,23 @@ function updateExpandBtn() {
   }
 }
 
+function applyGalleryAnimations(galleryEl: HTMLElement) {
+  const observer = new IntersectionObserver((entries) => {
+    let delayIndex = 0;
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('revealed'), delayIndex * 80);
+        delayIndex++;
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  galleryEl.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
+    observer.observe(wrapper);
+  });
+}
+
 function renderGallery() {
   const galleryEl = document.getElementById('gallery');
   if (!galleryEl) return;
@@ -512,10 +538,16 @@ function renderGallery() {
     };
     if (img.complete) {
       verifyOrientation();
+      img.classList.add('loaded');
     } else {
-      img.addEventListener('load', verifyOrientation);
+      img.addEventListener('load', () => {
+        verifyOrientation();
+        img.classList.add('loaded');
+      });
     }
   });
+
+  applyGalleryAnimations(galleryEl);
 }
 
 // --- Edit Mode ---

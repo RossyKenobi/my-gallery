@@ -203,6 +203,8 @@ header {
   letter-spacing: -0.02em;
   text-align: center;
   text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  animation: heroReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
 }
 
 .hero-subtitle {
@@ -214,6 +216,13 @@ header {
   width: max-content; /* Strictly hug the text */
   max-width: 90vw;
   margin: 0 auto;
+  animation: heroReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  opacity: 0;
+}
+
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(30px); letter-spacing: 0.1em; }
+  to { opacity: 1; transform: translateY(0); letter-spacing: inherit; }
 }
 
 /* Scroll Indicator - Final Adjustments */
@@ -297,13 +306,20 @@ header {
   position: relative;
   display: block;
   width: 100%;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gallery-item-wrapper.revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .gallery-item {
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
   box-sizing: border-box; /* strict outer bounds locking */
   border: 0px solid transparent;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -318,14 +334,18 @@ header {
 }
 
 .gallery-item img {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+  border-radius: 24px;
   object-fit: cover;
   object-position: center;
-  transition: opacity 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
-
+.gallery-item img.loaded {
+  opacity: 1;
+}
 .gallery-item:hover img {
   opacity: 0.9;
 }
@@ -610,6 +630,12 @@ body.is-editing .sortable-ghost .gallery-item {
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   text-align: center;
   position: relative;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0) scale(1);
 }
 
 .modal-title {
