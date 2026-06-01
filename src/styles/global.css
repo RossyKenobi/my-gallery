@@ -1263,10 +1263,19 @@ div.cl-footer, div.cl-footerAction {
 /* Hide development badge and 'Secured by Clerk' branding */
 div.cl-internal-ftkpa, div.cl-developmentBadge, div.cl-logoBox,
 .cl-internal-2k2x0x, .cl-internal-1dauvpw, .cl-internal-1x7qvy, .cl-internal-180wb59,
-div[style*="repeating-linear-gradient"], div[style*="Development mode"] {
+div[style*="repeating-linear-gradient"], div[style*="Development mode"],
+[style*="repeating-linear-gradient"],
+#clerk-signin-mount [style*="repeating-linear-gradient"],
+#clerk-signup-mount [style*="repeating-linear-gradient"],
+#clerk-signin-mount .cl-internal-ftkpa,
+#clerk-signup-mount .cl-internal-ftkpa,
+#clerk-signin-mount div.cl-developmentBadge,
+#clerk-signup-mount div.cl-developmentBadge {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* --- UserButton Popover Dark Overrides --- */
@@ -1637,7 +1646,11 @@ body div.cl-signIn-root .cl-formFieldInput {
 /* Orange stripe watermark and dev mode override */
 .cl-userButtonPopoverCard [style*="repeating-linear-gradient"],
 .cl-modalContent [style*="repeating-linear-gradient"],
-.cl-userProfile-root [style*="repeating-linear-gradient"] {
+.cl-userProfile-root [style*="repeating-linear-gradient"],
+#clerk-signin-mount [style*="repeating-linear-gradient"],
+#clerk-signup-mount [style*="repeating-linear-gradient"],
+.cl-cardBox [style*="repeating-linear-gradient"],
+.cl-card [style*="repeating-linear-gradient"] {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;

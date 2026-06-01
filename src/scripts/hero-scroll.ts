@@ -51,7 +51,7 @@ export function initHeroScroll() {
       });
       isTicking = true;
     }
-  });
+  }, { passive: true });
 
   // Initial state
   heroOverlay.style.background = `rgba(0, 0, 0, 0.2)`;

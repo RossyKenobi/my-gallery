@@ -124,42 +124,8 @@ function renderLocalPreviewGrid() {
 }
 
 // --- R2 Upload Helpers ---
-const MAX_IMAGE_DIMENSION = 2400;
-const JPEG_QUALITY = 0.85;
-
-async function compressImage(file: Blob): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-        if (width > height) {
-          height = Math.round(height * (MAX_IMAGE_DIMENSION / width));
-          width = MAX_IMAGE_DIMENSION;
-        } else {
-          width = Math.round(width * (MAX_IMAGE_DIMENSION / height));
-          height = MAX_IMAGE_DIMENSION;
-        }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Compression failed'));
-        },
-        'image/jpeg',
-        JPEG_QUALITY
-      );
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
-  });
-}
+// Image compression moved to shared module (uses OffscreenCanvas when available)
+import { compressImage } from './compress';
 
 async function uploadToR2(file: Blob, filename: string): Promise<string> {
   const compressed = await compressImage(file);
