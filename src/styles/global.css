@@ -1857,10 +1857,10 @@ body > div[class*="cl-"] .cl-card label {
 /* Drag & Drop Zone */
 .drag-drop-zone {
   border: 1px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 24px;
   transition: all 0.3s ease;
-  padding: 1rem 0;
-  margin: -1rem 0;
+  padding: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 .drag-drop-zone.drag-over {
   border: 1px dashed rgba(255, 255, 255, 0.6);

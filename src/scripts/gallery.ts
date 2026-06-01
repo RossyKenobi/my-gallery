@@ -1308,7 +1308,7 @@ export function initGallery(config: GalleryConfig) {
     });
   };
 
-  setupDragAndDrop('local-tab', 'local-file-input');
+  setupDragAndDrop('local-drag-zone', 'local-file-input');
   setupDragAndDrop('mini-gallery-grid', 'mini-file-input');
 
   // --- Initial Load ---
