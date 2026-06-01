@@ -87,14 +87,15 @@ function closeModal(modal: HTMLElement | null) {
 
 function renderLocalPreviewGrid() {
   const localPreviewGrid = document.getElementById('local-preview-grid');
-  const fileNameDisplay = document.getElementById('file-name-display');
+  const localChooseHeader = document.getElementById('local-choose-header');
   
   if (!localPreviewGrid) return;
   localPreviewGrid.innerHTML = '';
   
   if (pendingUploadFiles.length > 0) {
-    if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+    if (localChooseHeader) localChooseHeader.style.display = 'none';
     localPreviewGrid.style.display = 'grid';
+    localPreviewGrid.style.marginTop = '0';
     
     pendingUploadFiles.forEach((item, idx) => {
       const div = document.createElement('div');
@@ -102,10 +103,18 @@ function renderLocalPreviewGrid() {
       
       const imgObj = new Image();
       imgObj.onload = () => {
-        if (imgObj.naturalHeight > imgObj.naturalWidth) {
+        const isPortrait = imgObj.naturalHeight > imgObj.naturalWidth;
+        if (isPortrait) {
           div.classList.add('is-portrait');
         } else {
           div.classList.add('is-landscape');
+        }
+
+        if (idx === pendingUploadFiles.length - 1) {
+           const addBtn = document.getElementById('local-add-more-btn');
+           if (addBtn) {
+             addBtn.className = `mini-gallery-item ${isPortrait ? 'is-portrait' : 'is-landscape'}`;
+           }
         }
       };
       imgObj.src = item.dataUrl;
@@ -117,19 +126,34 @@ function renderLocalPreviewGrid() {
       localPreviewGrid.appendChild(div);
     });
 
+    const addDiv = document.createElement('div');
+    addDiv.id = 'local-add-more-btn';
+    addDiv.className = 'mini-gallery-item is-landscape';
+    addDiv.style.border = '1px dashed rgba(255, 255, 255, 0.4)';
+    addDiv.style.backgroundColor = 'transparent';
+    addDiv.style.cursor = 'pointer';
+    addDiv.innerHTML = `
+      <svg viewBox="0 0 24 24" style="width: 2rem; height: 2rem; stroke: rgba(255, 255, 255, 0.6); stroke-width: 2; fill: none; pointer-events: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    `;
+    addDiv.addEventListener('click', () => {
+      document.getElementById('local-file-input')?.click();
+    });
+    localPreviewGrid.appendChild(addDiv);
+
     localPreviewGrid.querySelectorAll('.mini-delete-btn').forEach((btn: any) => {
       btn.addEventListener('click', (e: Event) => {
         e.preventDefault();
+        e.stopPropagation();
         const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0');
         pendingUploadFiles.splice(idx, 1);
         renderLocalPreviewGrid();
       });
     });
   } else {
-    if (fileNameDisplay) {
-      fileNameDisplay.textContent = 'No photos chosen.';
-      fileNameDisplay.style.display = '';
-    }
+    if (localChooseHeader) localChooseHeader.style.display = 'flex';
     localPreviewGrid.style.display = 'none';
   }
 }
