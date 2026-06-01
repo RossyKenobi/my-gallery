@@ -99,6 +99,17 @@ function renderLocalPreviewGrid() {
     pendingUploadFiles.forEach((item, idx) => {
       const div = document.createElement('div');
       div.className = 'mini-gallery-item';
+      
+      const imgObj = new Image();
+      imgObj.onload = () => {
+        if (imgObj.naturalHeight > imgObj.naturalWidth) {
+          div.classList.add('is-portrait');
+        } else {
+          div.classList.add('is-landscape');
+        }
+      };
+      imgObj.src = item.dataUrl;
+
       div.innerHTML = `
         <img src="${item.dataUrl}" alt="preview ${idx}" style="pointer-events: none;" />
         <button class="mini-delete-btn" data-idx="${idx}">×</button>
@@ -522,6 +533,17 @@ function renderMiniGallery() {
   currentMiniImages.forEach((src, idx) => {
     const div = document.createElement('div');
     div.className = 'mini-gallery-item';
+
+    const imgObj = new Image();
+    imgObj.onload = () => {
+      if (imgObj.naturalHeight > imgObj.naturalWidth) {
+        div.classList.add('is-portrait');
+      } else {
+        div.classList.add('is-landscape');
+      }
+    };
+    imgObj.src = src;
+
     div.innerHTML = `
       <img src="${src}" alt="img ${idx}" draggable="false" style="pointer-events: none;" />
       ${canEdit ? `<button class="mini-delete-btn" data-idx="${idx}">×</button>` : ''}
