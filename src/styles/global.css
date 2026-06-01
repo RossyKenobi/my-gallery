@@ -1856,15 +1856,15 @@ body > div[class*="cl-"] .cl-card label {
 
 /* Drag & Drop Zone */
 .drag-drop-zone {
-  border: 1px dashed transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
   transition: all 0.3s ease;
   padding: 1rem 0;
   margin: -1rem 0;
 }
 .drag-drop-zone.drag-over {
-  border: 1px dashed rgba(255,255,255,0.4);
-  background-color: rgba(255,255,255,0.02);
-  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* Undo Toast */
@@ -1873,7 +1873,7 @@ body > div[class*="cl-"] .cl-card label {
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   padding: 12px 24px;
@@ -1884,8 +1884,8 @@ body > div[class*="cl-"] .cl-card label {
   z-index: 3000;
   opacity: 0;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
