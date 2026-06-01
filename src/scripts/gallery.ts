@@ -250,16 +250,26 @@ function getPhotoId(img: any): string {
   return img.photoId || '';
 }
 
+function escapeHTML(str: string): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // --- Gallery Rendering ---
 function createGalleryItemHTML(post: any): string {
   const images = post.images || [];
   const imageUrls = images.map(getImageUrl);
   const isCarousel = imageUrls.length > 1;
   const thumbnail = imageUrls.length > 0 ? imageUrls[0] : '';
-  const imagesData = JSON.stringify(imageUrls).replace(/"/g, '&quot;');
-  const captionData = (post.caption || '').replace(/"/g, '&quot;');
-  const authorData = (post.author || '').replace(/"/g, '&quot;');
-  const ownerUsernameData = (post.owner_username || '').replace(/"/g, '&quot;');
+  const imagesData = escapeHTML(JSON.stringify(imageUrls));
+  const captionData = escapeHTML(post.caption || '');
+  const authorData = escapeHTML(post.author || '');
+  const ownerUsernameData = escapeHTML(post.owner_username || '');
 
   const orientationClass = post.isPortrait === true ? 'is-portrait' : 'is-landscape';
 
@@ -292,9 +302,9 @@ function createGalleryItemHTML(post: any): string {
         </button>` : '';
 
   return `
-    <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${post.id}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${post.isPortrait === undefined}">
-      <a href="${thumbnail}" class="gallery-item" data-pswp-src="${thumbnail}">
-        <img src="${thumbnail}" alt="${post.caption || 'Gallery Post'}" loading="lazy" decoding="async" />
+    <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${escapeHTML(post.id)}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${post.isPortrait === undefined}">
+      <a href="${escapeHTML(thumbnail)}" class="gallery-item" data-pswp-src="${escapeHTML(thumbnail)}">
+        <img src="${escapeHTML(thumbnail)}" alt="${captionData || 'Gallery Post'}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
         ${hideBtnHTML}
         ${isCarousel ? `
@@ -356,9 +366,9 @@ function createExpandedItemHTML(photo: any): string {
     </button>` : '';
 
   return `
-    <div class="gallery-item-wrapper" data-photo-id="${photo.photoId}" data-stack-id="${photo.stackId}" data-owner-username="${(photo.owner_username || '').replace(/"/g, '&quot;')}" data-author="${(photo.author || '').replace(/"/g, '&quot;')}">
-      <a href="${photo.url}" class="gallery-item" data-pswp-src="${photo.url}">
-        <img src="${photo.url}" alt="${photo.caption || 'Photo'}" loading="lazy" decoding="async" />
+    <div class="gallery-item-wrapper" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
+      <a href="${escapeHTML(photo.url)}" class="gallery-item" data-pswp-src="${escapeHTML(photo.url)}">
+        <img src="${escapeHTML(photo.url)}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
       </a>
     </div>

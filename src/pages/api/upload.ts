@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { nanoid } from 'nanoid';
 
 const BUCKET = 'my-gallery-images';
 
@@ -30,12 +31,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!file || !(file instanceof File)) {
       return new Response(JSON.stringify({ error: 'File is required' }), { status: 400 });
     }
-    if (!filename) {
-      return new Response(JSON.stringify({ error: 'Filename is required' }), { status: 400 });
-    }
+
+    const originalExt = file.name.split('.').pop() || 'jpg';
+    const safeFilename = `${nanoid()}.${originalExt}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const key = `posts/${filename}`;
+    const key = `posts/${safeFilename}`;
 
     const s3 = getS3Client();
     await s3.send(new PutObjectCommand({
