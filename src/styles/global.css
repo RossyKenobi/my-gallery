@@ -203,7 +203,7 @@ header {
   letter-spacing: -0.02em;
   text-align: center;
   text-shadow: 0 4px 15px rgba(0,0,0,0.4);
-  animation: heroReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: heroReveal 1.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
 
@@ -216,7 +216,7 @@ header {
   width: max-content; /* Strictly hug the text */
   max-width: 90vw;
   margin: 0 auto;
-  animation: heroReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  animation: heroReveal 1.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
   opacity: 0;
 }
 
