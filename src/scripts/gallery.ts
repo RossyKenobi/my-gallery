@@ -1155,7 +1155,7 @@ export function initGallery(config: GalleryConfig) {
         };
         
         btn.addEventListener('click', undo);
-        setTimeout(commit, 5000);
+        setTimeout(commit, 3500);
       } else {
         executeSave();
       }
@@ -1368,7 +1368,7 @@ export function initGallery(config: GalleryConfig) {
           };
           
           btn.addEventListener('click', undo);
-          setTimeout(commit, 5000);
+          setTimeout(commit, 3500);
         } else {
           executeSave();
         }
