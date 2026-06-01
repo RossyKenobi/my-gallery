@@ -133,7 +133,7 @@ function renderLocalPreviewGrid() {
     addDiv.style.backgroundColor = 'transparent';
     addDiv.style.cursor = 'pointer';
     addDiv.innerHTML = `
-      <svg viewBox="0 0 24 24" style="width: 2rem; height: 2rem; stroke: rgba(255, 255, 255, 0.6); stroke-width: 2; fill: none; pointer-events: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <svg viewBox="0 0 24 24" style="width: 2rem; height: 2rem; stroke: rgba(255, 255, 255, 0.6); stroke-width: 1; fill: none; pointer-events: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
@@ -580,10 +580,18 @@ function renderMiniGallery() {
 
     const imgObj = new Image();
     imgObj.onload = () => {
-      if (imgObj.naturalHeight > imgObj.naturalWidth) {
+      const isPortrait = imgObj.naturalHeight > imgObj.naturalWidth;
+      if (isPortrait) {
         div.classList.add('is-portrait');
       } else {
         div.classList.add('is-landscape');
+      }
+
+      if (idx === currentMiniImages.length - 1 && canEdit) {
+         const addBtn = document.getElementById('mini-add-more-btn');
+         if (addBtn) {
+           addBtn.className = `mini-gallery-item ${isPortrait ? 'is-portrait' : 'is-landscape'} add-more-btn-cell`;
+         }
       }
     };
     imgObj.src = src;
@@ -594,6 +602,25 @@ function renderMiniGallery() {
     `;
     miniGalleryGrid?.appendChild(div);
   });
+
+  if (canEdit && miniGalleryGrid && currentMiniImages.length > 0) {
+    const addDiv = document.createElement('div');
+    addDiv.id = 'mini-add-more-btn';
+    addDiv.className = 'mini-gallery-item is-landscape add-more-btn-cell';
+    addDiv.style.border = '1px dashed rgba(255, 255, 255, 0.4)';
+    addDiv.style.backgroundColor = 'transparent';
+    addDiv.style.cursor = 'pointer';
+    addDiv.innerHTML = `
+      <svg viewBox="0 0 24 24" style="width: 2rem; height: 2rem; stroke: rgba(255, 255, 255, 0.6); stroke-width: 1; fill: none; pointer-events: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    `;
+    addDiv.addEventListener('click', () => {
+      document.getElementById('mini-file-input')?.click();
+    });
+    miniGalleryGrid.appendChild(addDiv);
+  }
 
   if (canEdit && miniGalleryGrid) {
     miniGalleryGrid.querySelectorAll('.mini-delete-btn').forEach((btn: any) => {
@@ -616,8 +643,11 @@ function enableMiniSortable(canEdit: boolean) {
 
   miniSortable = new Sortable(miniGalleryGrid, {
     animation: 150,
-    filter: '.mini-delete-btn',
+    filter: '.mini-delete-btn, .add-more-btn-cell',
     preventOnFilter: false,
+    onMove: (evt: any) => {
+      return evt.related.className.indexOf('add-more-btn-cell') === -1;
+    },
     onEnd: (evt: any) => {
       const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
       currentMiniImages.splice(evt.newIndex, 0, el);
