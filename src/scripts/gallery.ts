@@ -152,10 +152,30 @@ function renderLocalPreviewGrid() {
         renderLocalPreviewGrid();
       });
     });
+
+    enableLocalSortable(localPreviewGrid);
   } else {
     if (localChooseHeader) localChooseHeader.style.display = 'flex';
     localPreviewGrid.style.display = 'none';
   }
+}
+
+let localSortable: any = null;
+function enableLocalSortable(grid: HTMLElement) {
+  if (localSortable) localSortable.destroy();
+  localSortable = new Sortable(grid, {
+    animation: 150,
+    filter: '.mini-delete-btn, .add-more-btn-cell',
+    preventOnFilter: false,
+    onMove: (evt: any) => {
+      return evt.related.className.indexOf('add-more-btn-cell') === -1;
+    },
+    onEnd: (evt: any) => {
+      const el = pendingUploadFiles.splice(evt.oldIndex, 1)[0];
+      pendingUploadFiles.splice(evt.newIndex, 0, el);
+      renderLocalPreviewGrid(); // Fix data-idx bindings and add-more button class
+    }
+  });
 }
 
 // --- R2 Upload Helpers ---
@@ -601,6 +621,7 @@ function enableMiniSortable(canEdit: boolean) {
     onEnd: (evt: any) => {
       const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
       currentMiniImages.splice(evt.newIndex, 0, el);
+      renderMiniGallery(); // Re-render to update data-idx for delete buttons
     }
   });
 }
