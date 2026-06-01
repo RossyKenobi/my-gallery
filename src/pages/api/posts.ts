@@ -13,9 +13,6 @@ export const GET: APIRoute = async ({ url }) => {
 
     // Safe schema guards
     try {
-      await sql`ALTER TABLE stacks ADD COLUMN IF NOT EXISTS is_hidden_from_global BOOLEAN DEFAULT FALSE`;
-      await sql`ALTER TABLE photos ADD COLUMN IF NOT EXISTS expanded_sort_order INTEGER`;
-      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS gallery_expanded BOOLEAN DEFAULT FALSE`;
     } catch(e) {
       console.warn('Failed to conditionally add columns', e);
     }
