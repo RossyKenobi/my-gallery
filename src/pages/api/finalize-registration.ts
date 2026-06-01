@@ -13,20 +13,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { inviteId } = await request.json();
 
     if (!inviteId) {
-      return new Response(JSON.stringify({ error: 'Invite ID required' }), { status: 400 });
+      await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${import.meta.env.CLERK_SECRET_KEY}` }
+      });
+      return new Response(JSON.stringify({ error: 'Invite ID required. Account deleted.' }), { status: 400 });
     }
 
-    // Consume the invite code
-    await sql`
+    const consumeRes = await sql`
       UPDATE invitation_codes
       SET is_used = true, used_by_clerk_id = ${auth.userId}, used_at = NOW()
       WHERE id = ${inviteId} AND is_used = false
+      RETURNING code
     `;
 
-    // Check if the consumed code gives Admin rights
-    const inviteRows = await sql`SELECT code FROM invitation_codes WHERE id = ${inviteId}`;
-    const code = inviteRows[0]?.code || '';
-    const isRootAdmin = code.startsWith('ROOT-ADMIN-');
+    if (consumeRes.length === 0) {
+      await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${import.meta.env.CLERK_SECRET_KEY}` }
+      });
+      return new Response(JSON.stringify({ error: 'Invalid or already used invite code. Account deleted.' }), { status: 400 });
+    }
+
+    const code = consumeRes[0].code;
+    const adminSecret = import.meta.env.ADMIN_INVITE_CODE;
+    const isRootAdmin = adminSecret ? code === adminSecret : false;
 
     // Get user email from Clerk
     const clerkRes = await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
