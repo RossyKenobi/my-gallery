@@ -1016,7 +1016,7 @@ async function handleLocalUpload() {
 // --- Load Gallery Data ---
 async function loadGallery() {
   try {
-    const res = await fetch(`${galleryConfig.postsApiUrl}${galleryConfig.postsApiUrl.includes('?') ? '&' : '?'}t=${Date.now()}`);
+    const res = await fetch(galleryConfig.postsApiUrl);
     if (!res.ok) throw new Error('Failed to load gallery data');
     const data = await res.json();
     if (Array.isArray(data)) {
