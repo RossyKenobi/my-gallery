@@ -3,6 +3,7 @@ export const prerender = false;
 import '../styles/global.css';
 import GalleryShared from '../components/GalleryShared.astro';
 import { ViewTransitions } from 'astro:transitions';
+import { getGalleryData } from './api/posts';
 
 const auth = Astro.locals.auth();
 const currentUserId = auth?.userId || null;
@@ -35,6 +36,13 @@ try {
   });
 } catch (e) {
   // DB not migrated yet
+}
+
+let initialGalleryData: any[] = [];
+try {
+  initialGalleryData = await getGalleryData(null, null);
+} catch (e) {
+  console.error("Failed to fetch initial gallery data", e);
 }
 ---
 
@@ -268,6 +276,9 @@ try {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
       };
+    </script>
+    <script define:vars={{ initialGalleryData }}>
+      window.__INITIAL_GALLERY_DATA__ = initialGalleryData;
     </script>
     <script>
       import { initGallery } from '../scripts/gallery/index';

@@ -4,20 +4,10 @@ import { isAdmin } from '../../lib/auth';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  try {
-    const ownerFilter = url.searchParams.get('owner');
-    const sortMode = url.searchParams.get('sort'); // 'personal' or default
+export async function getGalleryData(ownerFilter: string | null, sortMode: string | null) {
+  const orderColumn = sortMode === 'personal' ? 'personal_sort_order' : 'sort_order';
 
-    const orderColumn = sortMode === 'personal' ? 'personal_sort_order' : 'sort_order';
-
-    // Safe schema guards
-    try {
-    } catch(e) {
-      console.warn('Failed to conditionally add columns', e);
-    }
-
-    let rows;
+  let rows;
     if (ownerFilter) {
       rows = await sql`
         SELECT
@@ -90,6 +80,16 @@ export const GET: APIRoute = async ({ url }) => {
     if (sortMode === 'personal') {
       results.sort((a: any, b: any) => (a.personal_sort_order ?? 0) - (b.personal_sort_order ?? 0));
     }
+
+    return results;
+}
+
+export const GET: APIRoute = async ({ url }) => {
+  try {
+    const ownerFilter = url.searchParams.get('owner');
+    const sortMode = url.searchParams.get('sort');
+
+    const results = await getGalleryData(ownerFilter, sortMode);
 
     return new Response(JSON.stringify(results), {
       headers: { 'Content-Type': 'application/json' },

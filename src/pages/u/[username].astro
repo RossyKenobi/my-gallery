@@ -4,6 +4,7 @@ import '../../styles/global.css';
 import GalleryShared from '../../components/GalleryShared.astro';
 import { getUserByUsername, getRedirect, isAdmin, ensureUser } from '../../lib/auth';
 import { ViewTransitions } from 'astro:transitions';
+import { getGalleryData } from '../api/posts';
 
 const { username } = Astro.params;
 
@@ -47,6 +48,13 @@ const backgroundUrl = pageOwner.background_url || null;
 // Force onboarding for smyfy1@outlook.com (clerk_id: user_3C2G0yGMMV74pCHcVG270RI2IhD)
 const forceOnboarding = isOwner && (pageOwner.clerk_id === 'user_3C2G0yGMMV74pCHcVG270RI2IhD' || pageOwner.email === 'smyfy1@outlook.com');
 const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
+
+let initialGalleryData: any[] = [];
+try {
+  initialGalleryData = await getGalleryData(pageOwner.clerk_id, 'personal');
+} catch (e) {
+  console.error("Failed to fetch personal gallery data", e);
+}
 ---
 
 <html lang="en">
@@ -288,6 +296,9 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
         forceOnboarding: forceOnboarding,
         galleryExpanded: pageOwner.gallery_expanded || false,
       };
+    </script>
+    <script define:vars={{ initialGalleryData }}>
+      window.__INITIAL_GALLERY_DATA__ = initialGalleryData;
     </script>
     <script>
       import { initGallery } from '../../scripts/gallery/index';
