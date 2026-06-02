@@ -364,10 +364,10 @@ html {
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 0.8rem 1.5rem;
   border-radius: 40px;
   color: white;
@@ -377,7 +377,7 @@ html {
   opacity: 0;
   pointer-events: none;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 100005;
+  z-index: 2147483647;
 }
 .system-toast.is-error {
   background: rgba(255, 50, 50, 0.2);
