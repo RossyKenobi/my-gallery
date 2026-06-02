@@ -262,7 +262,7 @@ function createGalleryItemHTML(post: any): string {
           </svg>
         </button>` : '';
 
-  const lqipStyle = lqip ? `background-image: url(${lqip}); background-size: cover; background-position: center;` : '';
+  const lqipStyle = lqip ? `background-image: url('${lqip}'); background-size: cover; background-position: center;` : '';
   const srcset = (thumbnail !== mainUrl) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(mainUrl)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
 
   return `
@@ -333,7 +333,7 @@ function createExpandedItemHTML(photo: any): string {
 
   const thumbnail = photo.thumbnail_url || photo.url;
   const lqip = photo.lqip || '';
-  const lqipStyle = lqip ? `background-image: url(${lqip}); background-size: cover; background-position: center;` : '';
+  const lqipStyle = lqip ? `background-image: url('${lqip}'); background-size: cover; background-position: center;` : '';
   const srcset = (thumbnail !== photo.url) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photo.url)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
 
   return `
@@ -790,16 +790,13 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
       onClick: async () => {
         try {
           await navigator.clipboard.writeText(window.location.href);
-          const toast = document.getElementById('undo-toast');
-          const text = document.getElementById('undo-toast-text');
-          const btn = document.getElementById('undo-toast-btn');
-          if (toast && text && btn) {
-            text.textContent = 'Link copied to clipboard';
-            btn.style.display = 'none';
+          const toast = document.getElementById('system-toast');
+          const toastText = document.getElementById('system-toast-text');
+          if (toast && toastText) {
+            toastText.textContent = 'Link copied to clipboard';
             toast.classList.add('visible');
             setTimeout(() => {
               toast.classList.remove('visible');
-              setTimeout(() => { btn.style.display = ''; }, 300);
             }, 2000);
           } else {
             alert('Link copied to clipboard');
