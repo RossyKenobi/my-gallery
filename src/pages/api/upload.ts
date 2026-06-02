@@ -26,7 +26,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const formData = await request.formData();
     const file = formData.get('file');
-    const filename = formData.get('filename') as string;
+    const thumbnail = formData.get('thumbnail');
+    const lqip = formData.get('lqip') as string;
 
     if (!file || !(file instanceof File)) {
       return new Response(JSON.stringify({ error: 'File is required' }), { status: 400 });
@@ -47,8 +48,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }));
 
     const finalImageUrl = `https://img.penumbrae.uk/${key}`;
+    let thumbnailUrl = '';
 
-    return new Response(JSON.stringify({ finalImageUrl }), { status: 200 });
+    if (thumbnail && thumbnail instanceof File) {
+      const thumbBuffer = Buffer.from(await thumbnail.arrayBuffer());
+      const thumbKey = `posts/thumb_${safeFilename}`;
+      await s3.send(new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: thumbKey,
+        Body: thumbBuffer,
+        ContentType: thumbnail.type || 'image/jpeg',
+      }));
+      thumbnailUrl = `https://img.penumbrae.uk/${thumbKey}`;
+    }
+
+    return new Response(JSON.stringify({ finalImageUrl, thumbnailUrl, lqip }), { status: 200 });
   } catch (err: any) {
     console.error('Upload error:', err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });

@@ -44,7 +44,27 @@ try {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="generator" content={Astro.generator} />
-    <title>THE GALLERY BY F.Y.</title>
+    <title>{siteTitle} | The Gallery</title>
+    <meta name="description" content={siteSubtitle} />
+    <meta property="og:title" content={`${siteTitle} | The Gallery`} />
+    <meta property="og:description" content={siteSubtitle} />
+    <meta property="og:image" content={siteBackground} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${siteTitle} | The Gallery`} />
+    <meta name="twitter:description" content={siteSubtitle} />
+    <meta name="twitter:image" content={siteBackground} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ImageGallery",
+      "name": siteTitle,
+      "description": siteSubtitle,
+      "image": siteBackground,
+      "publisher": {
+        "@type": "Organization",
+        "name": "Silent Flânerie"
+      }
+    })} />
     <ViewTransitions />
     
     <!-- PWA / Offline Support -->

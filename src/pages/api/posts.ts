@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
           s.id, s.caption, s.author, s.category,
           s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
           u.username AS owner_username,
-          p.id AS photo_id, p.image_url AS photo_url, p.sort_order AS photo_sort_order, p.expanded_sort_order
+          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.expanded_sort_order
         FROM stacks s
         LEFT JOIN photos p ON p.stack_id = s.id
         LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ url }) => {
           s.id, s.caption, s.author, s.category,
           s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
           u.username AS owner_username,
-          p.image_url AS photo_url, p.sort_order AS photo_sort_order
+          p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order
         FROM stacks s
         LEFT JOIN photos p ON p.stack_id = s.id
         LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
@@ -67,11 +67,17 @@ export const GET: APIRoute = async ({ url }) => {
         if (sortMode === 'personal' && ownerFilter) {
           stackMap.get(row.id).images.push({
             url: row.photo_url,
+            thumbnail_url: row.thumbnail_url,
+            lqip: row.lqip,
             photoId: row.photo_id,
             expandedSortOrder: row.expanded_sort_order,
           });
         } else {
-          stackMap.get(row.id).images.push(row.photo_url);
+          stackMap.get(row.id).images.push({
+            url: row.photo_url,
+            thumbnail_url: row.thumbnail_url,
+            lqip: row.lqip,
+          });
         }
       }
     }
@@ -139,8 +145,11 @@ export const PUT: APIRoute = async ({ locals, request, url }) => {
           if (canEdit) {
             await sql`DELETE FROM photos WHERE stack_id = ${post.id}`;
             for (let j = 0; j < post.images.length; j++) {
-              const imgUrl = typeof post.images[j] === 'string' ? post.images[j] : post.images[j].url;
-              await sql`INSERT INTO photos (stack_id, image_url, sort_order, created_at) VALUES (${post.id}, ${imgUrl}, ${j}, NOW())`;
+              const imgObj = typeof post.images[j] === 'string' ? { url: post.images[j] } : post.images[j];
+              await sql`
+                INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, sort_order, created_at)
+                VALUES (${post.id}, ${imgObj.url}, ${imgObj.thumbnail_url || null}, ${imgObj.lqip || null}, ${j}, NOW())
+              `;
             }
           }
         }

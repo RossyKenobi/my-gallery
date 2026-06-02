@@ -58,6 +58,23 @@ let editActions: HTMLElement | null;
 let saveBtn: HTMLElement | null;
 let cancelBtn: HTMLElement | null;
 let addBtn: HTMLElement | null;
+
+// --- Global Toast Helper ---
+function showSystemToast(message: string, isError = false) {
+  const toast = document.createElement('div');
+  toast.className = `system-toast ${isError ? 'is-error' : ''}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  // Trigger reflow
+  toast.offsetHeight;
+  toast.classList.add('visible');
+  
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
+}
 let galleryBottomBar: HTMLElement | null;
 let confirmDiscardModal: HTMLElement | null;
 let confirmDiscardBtn: HTMLElement | null;
@@ -178,16 +195,16 @@ function enableLocalSortable(grid: HTMLElement) {
   });
 }
 
-// --- R2 Upload Helpers ---
-// Image compression moved to shared module (uses OffscreenCanvas when available)
-import { compressImage } from './compress';
+import { generateImageVersions } from './compress';
 
-async function uploadToR2(file: Blob, filename: string, onProgress?: (percent: number) => void): Promise<string> {
-  const compressed = await compressImage(file);
+async function uploadToR2(file: Blob, filename: string, onProgress?: (percent: number) => void): Promise<{ finalImageUrl: string, thumbnailUrl?: string, lqip?: string }> {
+  const { main, thumbnail, lqip } = await generateImageVersions(file);
 
   const formData = new FormData();
   formData.append('filename', filename);
-  formData.append('file', compressed, filename);
+  formData.append('file', main, filename);
+  formData.append('thumbnail', thumbnail, 'thumb_' + filename);
+  formData.append('lqip', lqip);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -208,7 +225,11 @@ async function uploadToR2(file: Blob, filename: string, onProgress?: (percent: n
       } catch (e) {}
       
       if (xhr.status >= 200 && xhr.status < 300 && data) {
-        resolve(data.finalImageUrl);
+        resolve({
+          finalImageUrl: data.finalImageUrl,
+          thumbnailUrl: data.thumbnailUrl,
+          lqip: data.lqip
+        });
       } else {
         reject(new Error((data && data.error) || `Upload failed (HTTP ${xhr.status})`));
       }
@@ -265,7 +286,10 @@ function createGalleryItemHTML(post: any): string {
   const images = post.images || [];
   const imageUrls = images.map(getImageUrl);
   const isCarousel = imageUrls.length > 1;
-  const thumbnail = imageUrls.length > 0 ? imageUrls[0] : '';
+  const firstImage = images.length > 0 ? images[0] : null;
+  const mainUrl = getImageUrl(firstImage);
+  const thumbnail = firstImage && typeof firstImage === 'object' && firstImage.thumbnail_url ? firstImage.thumbnail_url : mainUrl;
+  const lqip = firstImage && typeof firstImage === 'object' && firstImage.lqip ? firstImage.lqip : '';
   const imagesData = escapeHTML(JSON.stringify(imageUrls));
   const captionData = escapeHTML(post.caption || '');
   const authorData = escapeHTML(post.author || '');
@@ -301,10 +325,13 @@ function createGalleryItemHTML(post: any): string {
           </svg>
         </button>` : '';
 
+  const lqipStyle = lqip ? `background-image: url(${lqip}); background-size: cover; background-position: center;` : '';
+  const srcset = (thumbnail !== mainUrl) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(mainUrl)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
+
   return `
     <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${escapeHTML(post.id)}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${post.isPortrait === undefined}">
-      <a href="${escapeHTML(thumbnail)}" class="gallery-item" data-pswp-src="${escapeHTML(thumbnail)}">
-        <img src="${escapeHTML(thumbnail)}" alt="${captionData || 'Gallery Post'}" loading="lazy" decoding="async" />
+      <a href="${escapeHTML(mainUrl)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(mainUrl)}" style="${lqipStyle}">
+        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${captionData || 'Gallery Post'}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
         ${hideBtnHTML}
         ${isCarousel ? `
@@ -328,6 +355,8 @@ function buildExpandedPhotos(): any[] {
     for (const img of images) {
       photos.push({
         url: getImageUrl(img),
+        thumbnail_url: typeof img === 'object' ? img.thumbnail_url : null,
+        lqip: typeof img === 'object' ? img.lqip : null,
         photoId: getPhotoId(img),
         expandedSortOrder: typeof img === 'object' ? img.expandedSortOrder : null,
         stackId: post.id,
@@ -365,10 +394,15 @@ function createExpandedItemHTML(photo: any): string {
       </svg>
     </button>` : '';
 
+  const thumbnail = photo.thumbnail_url || photo.url;
+  const lqip = photo.lqip || '';
+  const lqipStyle = lqip ? `background-image: url(${lqip}); background-size: cover; background-position: center;` : '';
+  const srcset = (thumbnail !== photo.url) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photo.url)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
+
   return `
     <div class="gallery-item-wrapper" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
-      <a href="${escapeHTML(photo.url)}" class="gallery-item" data-pswp-src="${escapeHTML(photo.url)}">
-        <img src="${escapeHTML(photo.url)}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
+      <a href="${escapeHTML(photo.url)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(photo.url)}" style="${lqipStyle}">
+        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
       </a>
     </div>
@@ -448,6 +482,7 @@ function attachExpandedListeners() {
           return { top: 40, bottom: 80, left: pad, right: pad };
         }
       });
+      registerPhotoSwipeUI(pswp, wrapper);
       pswp.on('gettingData', (ev: any) => {
         const item = ev.data;
         if (item.width > 0) return;
@@ -828,31 +863,7 @@ function attachGalleryListeners() {
         pswp.on('change', adjustSpacing);
         pswp.on('firstUpdate', adjustSpacing);
 
-        pswp.on('uiRegister', function() {
-          pswp.ui!.registerElement({
-            name: 'custom-caption',
-            order: 9, isButton: false, appendTo: 'root', html: '',
-            onInit: (el: HTMLElement, pswpInstance: any) => {
-              pswpInstance.on('change', () => {
-                const currentAuthor = wrapper.getAttribute('data-author');
-                const currentOwnerUsername = wrapper.getAttribute('data-owner-username');
-                let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
-                
-                const displayAuthor = (currentAuthor && currentAuthor.trim() !== '') ? currentAuthor.trim() : (currentOwnerUsername ? currentOwnerUsername.trim() : '');
-                
-                if (displayAuthor) {
-                  const upperAuthor = displayAuthor.toUpperCase();
-                  if (currentOwnerUsername && currentOwnerUsername.trim() !== '') {
-                    finalCaption += `<br>BY <a href="/u/${currentOwnerUsername.trim().toLowerCase()}" style="color: inherit; text-decoration: none;"><b>${upperAuthor}</b></a>`;
-                  } else {
-                    finalCaption += `<br>BY <b>${upperAuthor}</b>`;
-                  }
-                }
-                el.innerHTML = finalCaption;
-              });
-            }
-          });
-        });
+        registerPhotoSwipeUI(pswp, wrapper as HTMLElement, captionStr);
 
         pswp.on('gettingData', (e: any) => {
           const item = e.data;
@@ -886,7 +897,7 @@ async function handleLocalUpload() {
 
   const timestamp = Date.now();
   const postId = `local-${timestamp}`;
-  const imageUrls: string[] = [];
+  const imageUrls: any[] = [];
   let isPortrait = false;
 
   try {
@@ -909,10 +920,14 @@ async function handleLocalUpload() {
       const filePercentChunk = 50 / files.length;
       if (progressBarInner) progressBarInner.style.width = `${basePercent}%`;
       
-      const finalUrl = await uploadToR2(file, fileName, (p) => {
+      const uploadedData = await uploadToR2(file, fileName, (p) => {
         if (progressBarInner) progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
       });
-      imageUrls.push(finalUrl);
+      imageUrls.push({
+        url: uploadedData.finalImageUrl,
+        thumbnail_url: uploadedData.thumbnailUrl,
+        lqip: uploadedData.lqip
+      });
     }
 
     if (progressStatusText) progressStatusText.innerText = 'Saving post...';
@@ -965,12 +980,14 @@ async function loadGallery() {
     } else {
       throw new Error('Gallery data is not an array');
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Gallery load error:', e);
     const galleryEl = document.getElementById('gallery');
     if (galleryEl) {
-      galleryEl.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: rgba(255,255,255,0.3); padding: 4rem 0;">Failed to load gallery. Please refresh.</p>';
+      // Graceful empty state
+      galleryEl.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 4rem 0;"><div style="font-family: \'Cormorant Garamond\', serif; font-size: 2rem; color: rgba(255,255,255,0.2);">No pieces currently on display.</div></div>';
     }
+    showSystemToast('Failed to load gallery. Please refresh.', true);
   }
 }
 
@@ -1155,7 +1172,9 @@ export function initGallery(config: GalleryConfig) {
         if (progressStatusText) progressStatusText.innerText = 'Changes saved!';
         refreshPageBtn?.classList.add('active');
       } catch (e: any) {
+        console.error('Save failed:', e);
         if (progressStatusText) progressStatusText.innerText = `Error: ${e.message}`;
+        showSystemToast(`Failed: ${e.message}`, true);
         // Re-render in case of error to restore state
         if (isExpanded) renderExpandedGallery();
         else renderGallery();
@@ -1451,10 +1470,123 @@ export function initGallery(config: GalleryConfig) {
   setupDragAndDrop('mini-gallery-grid', 'mini-file-input');
 
   // --- Initial Load ---
+function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: string) {
+  pswp.on('uiRegister', function() {
+    // 1. Custom Caption
+    pswp.ui!.registerElement({
+      name: 'custom-caption', order: 9, isButton: false, appendTo: 'root', html: '',
+      onInit: (el: HTMLElement, pswpInstance: any) => {
+        pswpInstance.on('change', () => {
+          const currentAuthor = wrapper.getAttribute('data-author');
+          const currentOwnerUsername = wrapper.getAttribute('data-owner-username');
+          const captionStr = defaultCaption !== undefined ? defaultCaption : wrapper.getAttribute('data-caption') || '';
+          let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
+          
+          const displayAuthor = (currentAuthor && currentAuthor.trim() !== '') ? currentAuthor.trim() : (currentOwnerUsername ? currentOwnerUsername.trim() : '');
+          
+          if (displayAuthor) {
+            const upperAuthor = displayAuthor.toUpperCase();
+            if (currentOwnerUsername && currentOwnerUsername.trim() !== '') {
+              finalCaption += `<br>BY <a href="/u/${currentOwnerUsername.trim().toLowerCase()}" style="color: inherit; text-decoration: none;"><b>${upperAuthor}</b></a>`;
+            } else {
+              finalCaption += `<br>BY <b>${upperAuthor}</b>`;
+            }
+          }
+          el.innerHTML = finalCaption;
+        });
+      }
+    });
+
+    // 2. Photographer Button
+    pswp.ui!.registerElement({
+      name: 'photographer', order: 10, isButton: true, tagName: 'button', title: 'Author Profile',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+      onClick: (e: Event) => {
+        const username = wrapper.getAttribute('data-owner-username');
+        if (username) window.location.href = `/u/${username.trim().toLowerCase()}`;
+        else alert('Photographer profile not available.');
+      }
+    });
+
+    // 3. Download Original
+    pswp.ui!.registerElement({
+      name: 'download', order: 11, isButton: true, tagName: 'button', title: 'Download Image',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+      onClick: (e: Event, el: HTMLElement, pswpInstance: any) => {
+        const src = pswpInstance.currSlide?.data?.src;
+        if (src) {
+          const a = document.createElement('a');
+          a.href = src;
+          a.download = src.split('/').pop() || 'download';
+          a.target = '_blank';
+          a.click();
+        }
+      }
+    });
+
+    // 4. Twitter Share
+    pswp.ui!.registerElement({
+      name: 'share-twitter', order: 12, isButton: true, tagName: 'button', title: 'Share on X',
+      html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      onClick: () => {
+        const url = window.location.href;
+        const text = encodeURIComponent('Check out this shot from Silent Flânerie');
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
+      }
+    });
+
+    // 5. Copy Link
+    pswp.ui!.registerElement({
+      name: 'copy-link', order: 13, isButton: true, tagName: 'button', title: 'Copy Link',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
+      onClick: async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          const toast = document.getElementById('undo-toast');
+          const text = document.getElementById('undo-toast-text');
+          const btn = document.getElementById('undo-toast-btn');
+          if (toast && text && btn) {
+            text.textContent = 'Link copied to clipboard';
+            btn.style.display = 'none';
+            toast.classList.add('visible');
+            setTimeout(() => {
+              toast.classList.remove('visible');
+              setTimeout(() => { btn.style.display = ''; }, 300);
+            }, 2000);
+          } else {
+            alert('Link copied to clipboard');
+          }
+        } catch (err) {
+          console.error('Failed to copy', err);
+        }
+      }
+    });
+  });
+}
+
   loadGallery().then(() => {
     // Apply initial expand state after data loads
     if (config.initialExpanded && config.mode === 'personal') {
       expandGallery();
+    }
+  });
+
+  // Global Keyboard Navigation
+  document.addEventListener('keydown', (e) => {
+    // Esc closes any active custom modal
+    if (e.key === 'Escape') {
+      const activeOverlay = document.querySelector('.modal-overlay.active');
+      if (activeOverlay) {
+        closeModal(activeOverlay.id);
+      }
+    }
+
+    // Enter triggers click on focused gallery item
+    if (e.key === 'Enter') {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.classList.contains('gallery-item')) {
+        (activeEl as HTMLElement).click();
+      }
     }
   });
 }

@@ -69,3 +69,49 @@ export async function compressImage(file: Blob, maxDim = MAX_IMAGE_DIMENSION, qu
     img.src = URL.createObjectURL(file);
   });
 }
+
+/**
+ * Generate main, thumbnail, and lqip versions of an image.
+ */
+export async function generateImageVersions(file: Blob): Promise<{ main: Blob, thumbnail: Blob, lqip: string }> {
+  // 1. Main image (max 2400px)
+  const main = await compressImage(file, MAX_IMAGE_DIMENSION, JPEG_QUALITY);
+  
+  // 2. Thumbnail (max 640px)
+  const thumbnail = await compressImage(file, 640, 0.80);
+
+  // 3. LQIP (max 20px, high compression base64)
+  const lqipStr = await generateLQIP(file);
+
+  return { main, thumbnail, lqip: lqipStr };
+}
+
+async function generateLQIP(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const maxDim = 20;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        } else {
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d')!;
+      // Simple blur filter for better LQIP aesthetics
+      ctx.filter = 'blur(2px)';
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.3));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error('Failed to load image for LQIP'));
+    img.src = URL.createObjectURL(file);
+  });
+}

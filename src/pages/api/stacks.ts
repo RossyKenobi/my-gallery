@@ -31,9 +31,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Insert photos if any
     if (images && images.length > 0) {
       for (let i = 0; i < images.length; i++) {
+        const imgObj = typeof images[i] === 'string' ? { url: images[i], thumbnail_url: null, lqip: null } : images[i];
         await sql`
-          INSERT INTO photos (stack_id, image_url, sort_order, created_at)
-          VALUES (${id}, ${images[i]}, ${i}, NOW())
+          INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, sort_order, created_at)
+          VALUES (${id}, ${imgObj.url}, ${imgObj.thumbnail_url || null}, ${imgObj.lqip || null}, ${i}, NOW())
         `;
       }
     }

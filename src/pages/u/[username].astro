@@ -54,7 +54,24 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>{pageTitle} — THE GALLERY</title>
+    <title>{pageTitle} | The Gallery</title>
+    <meta name="description" content={pageSubtitle} />
+    <meta property="og:title" content={`${pageTitle} | The Gallery`} />
+    <meta property="og:description" content={pageSubtitle} />
+    <meta property="og:image" content={backgroundUrl || '/images/hero_background.jpg'} />
+    <meta property="og:type" content="profile" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${pageTitle} | The Gallery`} />
+    <meta name="twitter:description" content={pageSubtitle} />
+    <meta name="twitter:image" content={backgroundUrl || '/images/hero_background.jpg'} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": pageTitle,
+      "description": pageSubtitle,
+      "image": backgroundUrl || '/images/hero_background.jpg',
+      "url": Astro.url.href
+    })} />
     <ViewTransitions />
     
     <!-- PWA / Offline Support -->

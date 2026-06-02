@@ -1960,3 +1960,33 @@ body > div[class*="cl-"] .cl-card label {
 .undo-toast button:hover {
   color: #ff3366;
 }
+
+/* System Toast */
+.system-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.8rem 1.5rem;
+  border-radius: 40px;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+}
+.system-toast.is-error {
+  background: rgba(255, 50, 50, 0.2);
+  border-color: rgba(255, 50, 50, 0.3);
+}
+.system-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
