@@ -1,3 +1,5 @@
+import { state } from './state';
+
 /**
  * gallery.ts — Shared gallery logic for both main page and personal pages.
  * Handles: rendering, edit mode, PhotoSwipe, upload, mini gallery, drag-drop sorting.
@@ -26,39 +28,8 @@ const UPLOAD_API = '/api/upload';
 const POSTS_API = '/api/posts';
 
 // --- Global State ---
-let allPosts: any[] = [];
-let isEditMode = false;
-let sortableInstance: any = null;
-let initialOrder: string[] = [];
-let filePickerActive = false;
-let pendingAction: string | null = null;
-let pendingDeletedStackIds: string[] = [];  // Batch stack deletes
-let pendingDeletedPhotoIds: string[] = [];  // Batch photo deletes (expanded mode)
-let hiddenStatusChanged = false; // Track dirty state for hidden toggle delaying
-let isExpanded = false;  // Expand/Collapse state
-let expandedPhotos: any[] = [];  // Flattened photo array for expanded mode
-let expandBtn: HTMLElement | null;
-let currentEditingWrapper: HTMLElement | null = null;
-let currentMiniImages: string[] = [];
-let originalMiniImages = '';
-let originalMiniCaption = '';
-let originalMiniAuthor = '';
-let pendingMiniDeleteIdx: number | null = null;
-let galleryConfig: GalleryConfig;
 
 // --- DOM Elements (resolved at init time) ---
-let importModal: HTMLElement | null;
-let progressModal: HTMLElement | null;
-let fileInput: HTMLInputElement | null;
-let progressBarInner: HTMLElement | null;
-let progressStatusText: HTMLElement | null;
-let progressTitle: HTMLElement | null;
-let refreshPageBtn: HTMLElement | null;
-let editBtn: HTMLElement | null;
-let editActions: HTMLElement | null;
-let saveBtn: HTMLElement | null;
-let cancelBtn: HTMLElement | null;
-let addBtn: HTMLElement | null;
 
 // --- Global Toast Helper ---
 function showSystemToast(message: string, isError = false) {
@@ -76,27 +47,13 @@ function showSystemToast(message: string, isError = false) {
     setTimeout(() => toast.remove(), 400);
   }, 3000);
 }
-let galleryBottomBar: HTMLElement | null;
-let confirmDiscardModal: HTMLElement | null;
-let confirmDiscardBtn: HTMLElement | null;
-let cancelDiscardBtn: HTMLElement | null;
-let confirmDeleteModal: HTMLElement | null;
-let miniGalleryModal: HTMLElement | null;
-let closeMiniGalleryBtn: HTMLElement | null;
-let confirmMiniGalleryBtn: HTMLElement | null;
-let miniGalleryGrid: HTMLElement | null;
-let miniCaptionInput: HTMLTextAreaElement | null;
-let miniAuthorDisplay: HTMLElement | null;
-let miniImportBtn: HTMLElement | null;
-let miniFileInput: HTMLInputElement | null;
-let pendingUploadFiles: { file: File, dataUrl: string }[] = [];
 
 // --- Modal Helpers ---
 function openModal(modal: HTMLElement | null) {
   if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
 }
 function closeModal(modal: HTMLElement | null) {
-  if (filePickerActive) return;
+  if (state.filePickerActive) return;
   if (modal) {
     modal.classList.remove('active');
     if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
@@ -110,12 +67,12 @@ function renderLocalPreviewGrid() {
   if (!localPreviewGrid) return;
   localPreviewGrid.innerHTML = '';
   
-  if (pendingUploadFiles.length > 0) {
+  if (state.pendingUploadFiles.length > 0) {
     if (localChooseHeader) localChooseHeader.style.display = 'none';
     localPreviewGrid.style.display = 'grid';
     localPreviewGrid.style.marginTop = '0';
     
-    pendingUploadFiles.forEach((item, idx) => {
+    state.pendingUploadFiles.forEach((item, idx) => {
       const div = document.createElement('div');
       div.className = 'mini-gallery-item';
       
@@ -128,7 +85,7 @@ function renderLocalPreviewGrid() {
           div.classList.add('is-landscape');
         }
 
-        if (idx === pendingUploadFiles.length - 1) {
+        if (idx === state.pendingUploadFiles.length - 1) {
            const addBtn = document.getElementById('local-add-more-btn');
            if (addBtn) {
              addBtn.className = `mini-gallery-item ${isPortrait ? 'is-portrait' : 'is-landscape'}`;
@@ -166,7 +123,7 @@ function renderLocalPreviewGrid() {
         e.preventDefault();
         e.stopPropagation();
         const idx = parseInt((e.target as HTMLElement).getAttribute('data-idx') || '0');
-        pendingUploadFiles.splice(idx, 1);
+        state.pendingUploadFiles.splice(idx, 1);
         renderLocalPreviewGrid();
       });
     });
@@ -178,10 +135,9 @@ function renderLocalPreviewGrid() {
   }
 }
 
-let localSortable: any = null;
 function enableLocalSortable(grid: HTMLElement) {
-  if (localSortable) localSortable.destroy();
-  localSortable = new Sortable(grid, {
+  if (state.localSortable) state.localSortable.destroy();
+  state.localSortable = new Sortable(grid, {
     animation: 150,
     filter: '.mini-delete-btn, .add-more-btn-cell',
     preventOnFilter: false,
@@ -189,8 +145,8 @@ function enableLocalSortable(grid: HTMLElement) {
       return evt.related.className.indexOf('add-more-btn-cell') === -1;
     },
     onEnd: (evt: any) => {
-      const el = pendingUploadFiles.splice(evt.oldIndex, 1)[0];
-      pendingUploadFiles.splice(evt.newIndex, 0, el);
+      const el = state.pendingUploadFiles.splice(evt.oldIndex, 1)[0];
+      state.pendingUploadFiles.splice(evt.newIndex, 0, el);
       renderLocalPreviewGrid(); // Fix data-idx bindings and add-more button class
     }
   });
@@ -239,11 +195,11 @@ function createGalleryItemHTML(post: any): string {
   const orientationClass = isPortrait === true ? 'is-portrait' : 'is-landscape';
 
   let canEdit = false;
-  if (galleryConfig.userId) {
-    canEdit = galleryConfig.isAdmin || post.owner_clerk_id === galleryConfig.userId;
+  if (state.galleryConfig.userId) {
+    canEdit = state.galleryConfig.isAdmin || post.owner_clerk_id === state.galleryConfig.userId;
   }
   
-  const isHideBtnVisible = galleryConfig.mode === 'main' && galleryConfig.isAdmin;
+  const isHideBtnVisible = state.galleryConfig.mode === 'main' && state.galleryConfig.isAdmin;
   let hideClass = '';
   if (isHideBtnVisible && post.is_hidden_from_global) hideClass = 'is-ghosted';
 
@@ -290,7 +246,7 @@ function createGalleryItemHTML(post: any): string {
 
 function buildExpandedPhotos(): any[] {
   const photos: any[] = [];
-  for (const post of allPosts) {
+  for (const post of state.allPosts) {
     if (post.hidden) continue;
     const images = post.images || [];
     for (const img of images) {
@@ -323,8 +279,8 @@ function buildExpandedPhotos(): any[] {
 
 function createExpandedItemHTML(photo: any): string {
   let canEdit = false;
-  if (galleryConfig.userId) {
-    canEdit = galleryConfig.isAdmin || photo.owner_clerk_id === galleryConfig.userId;
+  if (state.galleryConfig.userId) {
+    canEdit = state.galleryConfig.isAdmin || photo.owner_clerk_id === state.galleryConfig.userId;
   }
 
   const deleteBtnHTML = canEdit ? `
@@ -356,12 +312,12 @@ function createExpandedItemHTML(photo: any): string {
 function renderExpandedGallery() {
   const galleryEl = document.getElementById('gallery');
   if (!galleryEl) return;
-  expandedPhotos = buildExpandedPhotos().filter(p => !pendingDeletedPhotoIds.includes(p.photoId));
+  state.expandedPhotos = buildExpandedPhotos().filter(p => !state.pendingDeletedPhotoIds.includes(p.photoId));
 
-  if (expandedPhotos.length === 0) {
+  if (state.expandedPhotos.length === 0) {
     galleryEl.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: rgba(255,255,255,0.3); padding: 4rem 0;">No photos yet.</p>';
   } else {
-    galleryEl.innerHTML = expandedPhotos.map(createExpandedItemHTML).join('');
+    galleryEl.innerHTML = state.expandedPhotos.map(createExpandedItemHTML).join('');
   }
 
   attachExpandedListeners();
@@ -406,7 +362,7 @@ function attachExpandedListeners() {
       e.stopPropagation();
       const photoId = btn.getAttribute('data-photo-id');
       if (photoId) {
-        pendingDeletedPhotoIds.push(photoId);
+        state.pendingDeletedPhotoIds.push(photoId);
         const wrapper = btn.closest('.gallery-item-wrapper');
         if (wrapper) wrapper.remove();
       }
@@ -453,26 +409,26 @@ function attachExpandedListeners() {
 }
 
 function expandGallery() {
-  isExpanded = true;
+  state.isExpanded = true;
   updateExpandBtn();
   renderExpandedGallery();
 }
 
 function collapseGallery() {
-  isExpanded = false;
-  pendingDeletedPhotoIds = [];
+  state.isExpanded = false;
+  state.pendingDeletedPhotoIds = [];
   updateExpandBtn();
   renderGallery();
 }
 
 function updateExpandBtn() {
-  if (!expandBtn) return;
-  const newText = isExpanded ? 'COLLAPSE' : 'EXPAND';
-  const textSpan = expandBtn.querySelector('.text');
+  if (!state.expandBtn) return;
+  const newText = state.isExpanded ? 'COLLAPSE' : 'EXPAND';
+  const textSpan = state.expandBtn.querySelector('.text');
   if (textSpan) {
     textSpan.textContent = newText;
   } else {
-    expandBtn.textContent = newText;
+    state.expandBtn.textContent = newText;
   }
 }
 
@@ -498,11 +454,11 @@ function renderGallery() {
   if (!galleryEl) return;
   
   // Base visual layer (don't show strictly hidden items, and apply pending deletions)
-  let visiblePosts = allPosts.filter((p: any) => !p.hidden && !pendingDeletedStackIds.includes(p.id));
+  let visiblePosts = state.allPosts.filter((p: any) => !p.hidden && !state.pendingDeletedStackIds.includes(p.id));
 
   // Determine standard vs global-hidden separation
-  if (galleryConfig.mode === 'main') {
-    if (isEditMode && galleryConfig.isAdmin) {
+  if (state.galleryConfig.mode === 'main') {
+    if (state.isEditMode && state.galleryConfig.isAdmin) {
       // Edit mode: Standard first, ghosted at the end
       const normal = visiblePosts.filter((p: any) => !p.is_hidden_from_global);
       const ghosted = visiblePosts.filter((p: any) => p.is_hidden_from_global);
@@ -557,26 +513,26 @@ function renderGallery() {
 
 // --- Edit Mode ---
 function enterEditMode() {
-  isEditMode = true;
+  state.isEditMode = true;
   document.body.classList.add('is-editing');
   
-  if (galleryConfig.mode === 'main' && galleryConfig.isAdmin) {
+  if (state.galleryConfig.mode === 'main' && state.galleryConfig.isAdmin) {
     renderGallery(); // Re-render to inject global-hidden items into the DOM!
   }
   
-  editBtn?.classList.add('hidden');
-  if (expandBtn) expandBtn.classList.add('hidden');
+  state.editBtn?.classList.add('hidden');
+  if (state.expandBtn) state.expandBtn.classList.add('hidden');
   const changeBgBtn = document.getElementById('change-bg-btn');
   if (changeBgBtn) changeBgBtn.classList.add('hidden');
   const createAlbumBtn = document.getElementById('add-new-post');
   if (createAlbumBtn) createAlbumBtn.classList.add('hidden');
-  editActions?.classList.remove('hidden');
+  state.editActions?.classList.remove('hidden');
   const orderNodes = Array.from(document.querySelectorAll('.gallery-item-wrapper'));
-  initialOrder = orderNodes.map(node => (isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
+  state.initialOrder = orderNodes.map(node => (state.isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
   const el = document.getElementById('gallery');
 
-  if (galleryConfig.canSort && el) {
-    sortableInstance = new Sortable(el, {
+  if (state.galleryConfig.canSort && el) {
+    state.sortableInstance = new Sortable(el, {
       animation: 150,
       ghostClass: 'sortable-ghost',
     });
@@ -584,7 +540,7 @@ function enterEditMode() {
 }
 
 function exitEditMode() {
-  isEditMode = false;
+  state.isEditMode = false;
   document.body.classList.remove('is-editing');
   
   const editControls = document.querySelector('.edit-controls');
@@ -600,18 +556,18 @@ function exitEditMode() {
   const createAlbumBtn = document.getElementById('add-new-post');
   if (createAlbumBtn) createAlbumBtn.classList.remove('hidden');
 
-  if (sortableInstance) sortableInstance.destroy();
+  if (state.sortableInstance) state.sortableInstance.destroy();
 }
 
 // --- Mini Gallery Logic ---
 function renderMiniGallery() {
-  if (!miniGalleryGrid) return;
-  miniGalleryGrid.innerHTML = '';
-  const postId = currentEditingWrapper ? currentEditingWrapper.getAttribute('data-id') : null;
-  const post = allPosts.find((p: any) => p.id === postId);
-  const canEdit = galleryConfig.isAdmin || (post && post.owner_clerk_id === galleryConfig.userId);
+  if (!state.miniGalleryGrid) return;
+  state.miniGalleryGrid.innerHTML = '';
+  const postId = state.currentEditingWrapper ? state.currentEditingWrapper.getAttribute('data-id') : null;
+  const post = state.allPosts.find((p: any) => p.id === postId);
+  const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
 
-  currentMiniImages.forEach((src, idx) => {
+  state.currentMiniImages.forEach((src, idx) => {
     const div = document.createElement('div');
     div.className = 'mini-gallery-item';
 
@@ -624,7 +580,7 @@ function renderMiniGallery() {
         div.classList.add('is-landscape');
       }
 
-      if (idx === currentMiniImages.length - 1 && canEdit) {
+      if (idx === state.currentMiniImages.length - 1 && canEdit) {
          const addBtn = document.getElementById('mini-add-more-btn');
          if (addBtn) {
            addBtn.className = `mini-gallery-item ${isPortrait ? 'is-portrait' : 'is-landscape'} add-more-btn-cell`;
@@ -637,10 +593,10 @@ function renderMiniGallery() {
       <img src="${src}" alt="img ${idx}" draggable="false" style="pointer-events: none;" />
       ${canEdit ? `<button class="mini-delete-btn" data-idx="${idx}">×</button>` : ''}
     `;
-    miniGalleryGrid?.appendChild(div);
+    state.miniGalleryGrid?.appendChild(div);
   });
 
-  if (canEdit && miniGalleryGrid && currentMiniImages.length > 0) {
+  if (canEdit && state.miniGalleryGrid && state.currentMiniImages.length > 0) {
     const addDiv = document.createElement('div');
     addDiv.id = 'mini-add-more-btn';
     addDiv.className = 'mini-gallery-item is-landscape add-more-btn-cell';
@@ -656,29 +612,28 @@ function renderMiniGallery() {
     addDiv.addEventListener('click', () => {
       document.getElementById('mini-file-input')?.click();
     });
-    miniGalleryGrid.appendChild(addDiv);
+    state.miniGalleryGrid.appendChild(addDiv);
   }
 
-  if (canEdit && miniGalleryGrid) {
-    miniGalleryGrid.querySelectorAll('.mini-delete-btn').forEach((btn: any) => {
+  if (canEdit && state.miniGalleryGrid) {
+    state.miniGalleryGrid.querySelectorAll('.mini-delete-btn').forEach((btn: any) => {
       btn.addEventListener('click', (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         // Deferred Local Deletion!
         const idx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-idx')!);
-        currentMiniImages.splice(idx, 1);
+        state.currentMiniImages.splice(idx, 1);
         renderMiniGallery(); // Re-render the grid instantly, wait for user to click Done to save R2
       });
     });
   }
 }
 
-let miniSortable: any = null;
 function enableMiniSortable(canEdit: boolean) {
-  if (miniSortable) miniSortable.destroy();
-  if (!canEdit || !miniGalleryGrid) return;
+  if (state.miniSortable) state.miniSortable.destroy();
+  if (!canEdit || !state.miniGalleryGrid) return;
 
-  miniSortable = new Sortable(miniGalleryGrid, {
+  state.miniSortable = new Sortable(state.miniGalleryGrid, {
     animation: 150,
     filter: '.mini-delete-btn, .add-more-btn-cell',
     preventOnFilter: false,
@@ -686,45 +641,45 @@ function enableMiniSortable(canEdit: boolean) {
       return evt.related.className.indexOf('add-more-btn-cell') === -1;
     },
     onEnd: (evt: any) => {
-      const el = currentMiniImages.splice(evt.oldIndex, 1)[0];
-      currentMiniImages.splice(evt.newIndex, 0, el);
+      const el = state.currentMiniImages.splice(evt.oldIndex, 1)[0];
+      state.currentMiniImages.splice(evt.newIndex, 0, el);
       renderMiniGallery(); // Re-render to update data-idx for delete buttons
     }
   });
 }
 
 function openMiniGallery(wrapper: HTMLElement) {
-  currentEditingWrapper = wrapper;
+  state.currentEditingWrapper = wrapper;
   const postId = wrapper.getAttribute('data-id');
-  const post = allPosts.find((p: any) => p.id === postId);
-  const canEdit = galleryConfig.isAdmin || (post && post.owner_clerk_id === galleryConfig.userId);
+  const post = state.allPosts.find((p: any) => p.id === postId);
+  const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
 
   const imagesRaw = wrapper.getAttribute('data-images') || '[]';
-  currentMiniImages = JSON.parse(imagesRaw);
-  originalMiniImages = JSON.stringify(currentMiniImages);
+  state.currentMiniImages = JSON.parse(imagesRaw);
+  state.originalMiniImages = JSON.stringify(state.currentMiniImages);
 
-  if (miniCaptionInput) {
-    miniCaptionInput.value = wrapper.getAttribute('data-caption') || '';
-    originalMiniCaption = miniCaptionInput.value;
-    miniCaptionInput.readOnly = !canEdit;
+  if (state.miniCaptionInput) {
+    state.miniCaptionInput.value = wrapper.getAttribute('data-caption') || '';
+    state.originalMiniCaption = state.miniCaptionInput.value;
+    state.miniCaptionInput.readOnly = !canEdit;
   }
 
-  if (miniAuthorDisplay) {
-    miniAuthorDisplay.innerText = wrapper.getAttribute('data-author') || '';
-    originalMiniAuthor = wrapper.getAttribute('data-author') || '';
+  if (state.miniAuthorDisplay) {
+    state.miniAuthorDisplay.innerText = wrapper.getAttribute('data-author') || '';
+    state.originalMiniAuthor = wrapper.getAttribute('data-author') || '';
   }
 
   if (canEdit) {
-    miniImportBtn?.classList.remove('hidden');
-    if (confirmMiniGalleryBtn) confirmMiniGalleryBtn.innerText = 'Done';
+    state.miniImportBtn?.classList.remove('hidden');
+    if (state.confirmMiniGalleryBtn) state.confirmMiniGalleryBtn.innerText = 'Done';
   } else {
-    miniImportBtn?.classList.add('hidden');
-    if (confirmMiniGalleryBtn) confirmMiniGalleryBtn.innerText = 'Done';
+    state.miniImportBtn?.classList.add('hidden');
+    if (state.confirmMiniGalleryBtn) state.confirmMiniGalleryBtn.innerText = 'Done';
   }
 
   renderMiniGallery();
   enableMiniSortable(canEdit);
-  openModal(miniGalleryModal);
+  openModal(state.miniGalleryModal);
 }
 
 // --- PhotoSwipe ---
@@ -836,7 +791,7 @@ function attachGalleryListeners() {
       e.stopPropagation();
       const postId = btn.getAttribute('data-id');
       if (postId) {
-        pendingDeletedStackIds.push(postId);
+        state.pendingDeletedStackIds.push(postId);
         const wrapper = btn.closest('.gallery-item-wrapper');
         if (wrapper) wrapper.remove(); // Visual erasure logic
       }
@@ -856,10 +811,10 @@ function attachGalleryListeners() {
       if (!postId || !wrapper || !galleryEl) return;
 
       const newState = !isCurrentlyHidden;
-      hiddenStatusChanged = true;
+      state.hiddenStatusChanged = true;
 
       // Update local memory immediately
-      const post = allPosts.find((p: any) => p.id === postId);
+      const post = state.allPosts.find((p: any) => p.id === postId);
       if (post) post.is_hidden_from_global = newState;
       
       // Visual toggle without reloading
@@ -947,17 +902,17 @@ function attachGalleryListeners() {
 
 // --- New Local Upload (R2) ---
 async function handleLocalUpload() {
-  if (!fileInput) return;
-  const files = pendingUploadFiles.map(p => p.file);
+  if (!state.fileInput) return;
+  const files = state.pendingUploadFiles.map(p => p.file);
   const captionEl = document.getElementById('local-caption-input') as HTMLTextAreaElement;
   const caption = captionEl?.value || '';
   const author = (window as any).__AUTH__?.username || '';
   if (files.length === 0) return;
 
-  openModal(progressModal);
-  if (progressTitle) progressTitle.innerText = 'Importing...';
-  if (progressStatusText) progressStatusText.innerText = 'Uploading images...';
-  if (progressBarInner) progressBarInner.style.width = '10%';
+  openModal(state.progressModal);
+  if (state.progressTitle) state.progressTitle.innerText = 'Importing...';
+  if (state.progressStatusText) state.progressStatusText.innerText = 'Uploading images...';
+  if (state.progressBarInner) state.progressBarInner.style.width = '10%';
 
   const timestamp = Date.now();
   const postId = `local-${timestamp}`;
@@ -978,14 +933,14 @@ async function handleLocalUpload() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileName = `p_local_${timestamp}_${i}.jpg`;
-      if (progressStatusText) progressStatusText.innerText = `Uploading image ${i + 1}/${files.length}...`;
+      if (state.progressStatusText) state.progressStatusText.innerText = `Uploading image ${i + 1}/${files.length}...`;
       
       const basePercent = 10 + (i / files.length) * 50;
       const filePercentChunk = 50 / files.length;
-      if (progressBarInner) progressBarInner.style.width = `${basePercent}%`;
+      if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent}%`;
       
       const uploadedData = await uploadToR2(file, fileName, (p) => {
-        if (progressBarInner) progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
+        if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
       });
       const img = new Image();
       img.src = URL.createObjectURL(file);
@@ -1003,8 +958,8 @@ async function handleLocalUpload() {
       });
     }
 
-    if (progressStatusText) progressStatusText.innerText = 'Saving post...';
-    if (progressBarInner) progressBarInner.style.width = '80%';
+    if (state.progressStatusText) state.progressStatusText.innerText = 'Saving post...';
+    if (state.progressBarInner) state.progressBarInner.style.width = '80%';
 
     const newPost: any = {
       id: postId,
@@ -1027,17 +982,17 @@ async function handleLocalUpload() {
       throw new Error(errData.error || 'Failed to create album');
     }
 
-    allPosts.push(newPost);
+    state.allPosts.push(newPost);
     renderGallery();
 
-    if (progressBarInner) progressBarInner.style.width = '100%';
-    if (progressStatusText) progressStatusText.innerText = 'Import complete!';
-    refreshPageBtn?.classList.add('active');
+    if (state.progressBarInner) state.progressBarInner.style.width = '100%';
+    if (state.progressStatusText) state.progressStatusText.innerText = 'Import complete!';
+    state.refreshPageBtn?.classList.add('active');
 
-    pendingUploadFiles = [];
+    state.pendingUploadFiles = [];
     renderLocalPreviewGrid();
   } catch (e: any) {
-    if (progressStatusText) progressStatusText.innerText = `Error: ${e.message}`;
+    if (state.progressStatusText) state.progressStatusText.innerText = `Error: ${e.message}`;
   }
 }
 
@@ -1050,13 +1005,13 @@ async function loadGallery() {
       data = win.__INITIAL_GALLERY_DATA__;
       win.__INITIAL_GALLERY_DATA__ = null; // consume it so subsequent loads (e.g. after upload) will fetch fresh
     } else {
-      const res = await fetch(galleryConfig.postsApiUrl);
+      const res = await fetch(state.galleryConfig.postsApiUrl);
       if (!res.ok) throw new Error('Failed to load gallery data');
       data = await res.json();
     }
     
     if (Array.isArray(data)) {
-      allPosts = data;
+      state.allPosts = data;
       renderGallery();
     } else {
       throw new Error('Gallery data is not an array');
@@ -1076,47 +1031,47 @@ async function loadGallery() {
 // ENTRY POINT
 // ==========================================
 export function initGallery(config: GalleryConfig) {
-  galleryConfig = config;
+  state.galleryConfig = config;
 
   // Resolve DOM elements
-  importModal = document.getElementById('import-modal');
-  progressModal = document.getElementById('progress-modal');
-  fileInput = document.getElementById('local-file-input') as HTMLInputElement;
-  progressBarInner = document.getElementById('progress-bar-inner');
-  progressStatusText = document.getElementById('progress-status-text');
-  progressTitle = document.getElementById('progress-title');
-  refreshPageBtn = document.getElementById('refresh-page-btn');
-  editBtn = document.getElementById('open-edit-mode');
-  editActions = document.getElementById('edit-actions');
-  saveBtn = document.getElementById('save-edits');
-  cancelBtn = document.getElementById('cancel-edits');
-  addBtn = document.getElementById('add-new-post');
-  galleryBottomBar = document.getElementById('gallery-bottom-bar');
-  confirmDiscardModal = document.getElementById('confirm-discard-modal');
-  confirmDiscardBtn = document.getElementById('confirm-discard-btn');
-  cancelDiscardBtn = document.getElementById('cancel-discard-btn');
-  confirmDeleteModal = document.getElementById('confirm-delete-modal');
-  miniGalleryModal = document.getElementById('mini-gallery-modal');
-  closeMiniGalleryBtn = document.getElementById('close-mini-gallery');
-  confirmMiniGalleryBtn = document.getElementById('confirm-mini-gallery');
-  miniGalleryGrid = document.getElementById('mini-gallery-grid');
-  miniCaptionInput = document.getElementById('mini-caption-input') as HTMLTextAreaElement;
-  miniAuthorDisplay = document.getElementById('mini-author-display');
-  miniImportBtn = document.getElementById('mini-import-btn');
-  miniFileInput = document.getElementById('mini-file-input') as HTMLInputElement;
+  state.importModal = document.getElementById('import-modal');
+  state.progressModal = document.getElementById('progress-modal');
+  state.fileInput = document.getElementById('local-file-input') as HTMLInputElement;
+  state.progressBarInner = document.getElementById('progress-bar-inner');
+  state.progressStatusText = document.getElementById('progress-status-text');
+  state.progressTitle = document.getElementById('progress-title');
+  state.refreshPageBtn = document.getElementById('refresh-page-btn');
+  state.editBtn = document.getElementById('open-edit-mode');
+  state.editActions = document.getElementById('edit-actions');
+  state.saveBtn = document.getElementById('save-edits');
+  state.cancelBtn = document.getElementById('cancel-edits');
+  state.addBtn = document.getElementById('add-new-post');
+  state.galleryBottomBar = document.getElementById('gallery-bottom-bar');
+  state.confirmDiscardModal = document.getElementById('confirm-discard-modal');
+  state.confirmDiscardBtn = document.getElementById('confirm-discard-btn');
+  state.cancelDiscardBtn = document.getElementById('cancel-discard-btn');
+  state.confirmDeleteModal = document.getElementById('confirm-delete-modal');
+  state.miniGalleryModal = document.getElementById('mini-gallery-modal');
+  state.closeMiniGalleryBtn = document.getElementById('close-mini-gallery');
+  state.confirmMiniGalleryBtn = document.getElementById('confirm-mini-gallery');
+  state.miniGalleryGrid = document.getElementById('mini-gallery-grid');
+  state.miniCaptionInput = document.getElementById('mini-caption-input') as HTMLTextAreaElement;
+  state.miniAuthorDisplay = document.getElementById('mini-author-display');
+  state.miniImportBtn = document.getElementById('mini-import-btn');
+  state.miniFileInput = document.getElementById('mini-file-input') as HTMLInputElement;
 
   // Show bottom bar if user is authorized to see it based on mode
   const canSeeEditControls = config.mode === 'main' ? !!config.userId : config.canSort;
-  if (canSeeEditControls && galleryBottomBar) {
-    galleryBottomBar.style.display = 'flex';
+  if (canSeeEditControls && state.galleryBottomBar) {
+    state.galleryBottomBar.style.display = 'flex';
   }
 
   // --- Expand Button ---
-  expandBtn = document.getElementById('expand-gallery-btn');
-  if (expandBtn) {
-    expandBtn.addEventListener('click', () => {
-      if (isEditMode) return; // Don't toggle while editing
-      if (isExpanded) {
+  state.expandBtn = document.getElementById('expand-gallery-btn');
+  if (state.expandBtn) {
+    state.expandBtn.addEventListener('click', () => {
+      if (state.isEditMode) return; // Don't toggle while editing
+      if (state.isExpanded) {
         collapseGallery();
       } else {
         expandGallery();
@@ -1126,88 +1081,88 @@ export function initGallery(config: GalleryConfig) {
         fetch('/api/user/expanded', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expanded: isExpanded })
+          body: JSON.stringify({ expanded: state.isExpanded })
         }).catch(err => console.error('Failed to save expand pref:', err));
       }
     });
   }
 
   // --- Edit Mode Events ---
-  editBtn?.addEventListener('click', () => { if (!isEditMode) enterEditMode(); });
+  state.editBtn?.addEventListener('click', () => { if (!state.isEditMode) enterEditMode(); });
 
-  cancelBtn?.addEventListener('click', () => {
+  state.cancelBtn?.addEventListener('click', () => {
     const orderNodes = Array.from(document.querySelectorAll('.gallery-item-wrapper'));
-    const currentOrder = orderNodes.map(node => (isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
-    if (currentOrder.join(',') !== initialOrder.join(',') || pendingDeletedStackIds.length > 0 || pendingDeletedPhotoIds.length > 0) {
-      pendingAction = 'DISCARD_EDITS';
-      openModal(confirmDiscardModal);
+    const currentOrder = orderNodes.map(node => (state.isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
+    if (currentOrder.join(',') !== state.initialOrder.join(',') || state.pendingDeletedStackIds.length > 0 || state.pendingDeletedPhotoIds.length > 0) {
+      state.pendingAction = 'DISCARD_EDITS';
+      openModal(state.confirmDiscardModal);
     } else {
       exitEditMode();
     }
   });
 
-  confirmDiscardBtn?.addEventListener('click', () => {
-    if (pendingAction === 'DISCARD_MINI_GALLERY') {
-      closeModal(confirmDiscardModal);
-      closeModal(miniGalleryModal);
-      pendingAction = null;
+  state.confirmDiscardBtn?.addEventListener('click', () => {
+    if (state.pendingAction === 'DISCARD_MINI_GALLERY') {
+      closeModal(state.confirmDiscardModal);
+      closeModal(state.miniGalleryModal);
+      state.pendingAction = null;
     } else {
       window.location.reload();
     }
   });
 
-  cancelDiscardBtn?.addEventListener('click', () => closeModal(confirmDiscardModal));
+  state.cancelDiscardBtn?.addEventListener('click', () => closeModal(state.confirmDiscardModal));
 
   // --- Save Order / Execute Deletions ---
-  saveBtn?.addEventListener('click', async () => {
+  state.saveBtn?.addEventListener('click', async () => {
     const orderNodes = Array.from(document.querySelectorAll('.gallery-item-wrapper'));
-    const newOrder = orderNodes.map(node => (isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
+    const newOrder = orderNodes.map(node => (state.isExpanded ? node.getAttribute('data-photo-id') : node.getAttribute('data-id')) || '');
     
-    if (newOrder.join(',') === initialOrder.join(',') && pendingDeletedStackIds.length === 0 && pendingDeletedPhotoIds.length === 0 && !hiddenStatusChanged) {
+    if (newOrder.join(',') === state.initialOrder.join(',') && state.pendingDeletedStackIds.length === 0 && state.pendingDeletedPhotoIds.length === 0 && !state.hiddenStatusChanged) {
       exitEditMode();
       return;
     }
     
     const executeSave = async () => {
-      openModal(progressModal);
-      if (progressTitle) progressTitle.innerText = 'Saving Changes...';
-      if (progressStatusText) progressStatusText.innerText = 'Updating...';
-      if (progressBarInner) progressBarInner.style.width = '30%';
+      openModal(state.progressModal);
+      if (state.progressTitle) state.progressTitle.innerText = 'Saving Changes...';
+      if (state.progressStatusText) state.progressStatusText.innerText = 'Updating...';
+      if (state.progressBarInner) state.progressBarInner.style.width = '30%';
 
       try {
         // 0. Process batch photo deletes (expanded mode)
-        if (pendingDeletedPhotoIds.length > 0) {
-          if (progressStatusText) progressStatusText.innerText = 'Deleting photos...';
+        if (state.pendingDeletedPhotoIds.length > 0) {
+          if (state.progressStatusText) state.progressStatusText.innerText = 'Deleting photos...';
           await Promise.all(
-            pendingDeletedPhotoIds.map(id => fetch(`/api/photos/${id}`, { method: 'DELETE' }))
+            state.pendingDeletedPhotoIds.map(id => fetch(`/api/photos/${id}`, { method: 'DELETE' }))
           );
           // Remove deleted photos from allPosts images arrays
-          for (const post of allPosts) {
+          for (const post of state.allPosts) {
             if (post.images) {
               post.images = post.images.filter((img: any) => {
                 const pid = typeof img === 'object' ? img.photoId : '';
-                return !pendingDeletedPhotoIds.includes(pid);
+                return !state.pendingDeletedPhotoIds.includes(pid);
               });
             }
           }
           // Remove stacks that have no photos left
-          allPosts = allPosts.filter((p: any) => p.images && p.images.length > 0);
-          pendingDeletedPhotoIds = [];
+          state.allPosts = state.allPosts.filter((p: any) => p.images && p.images.length > 0);
+          state.pendingDeletedPhotoIds = [];
         }
 
         // 1. Process batch API stack deletes
-        if (pendingDeletedStackIds.length > 0) {
-          if (progressStatusText) progressStatusText.innerText = 'Deleting posts...';
+        if (state.pendingDeletedStackIds.length > 0) {
+          if (state.progressStatusText) state.progressStatusText.innerText = 'Deleting posts...';
           await Promise.all(
-            pendingDeletedStackIds.map(id => fetch(`/api/stacks/${id}`, { method: 'DELETE' }))
+            state.pendingDeletedStackIds.map(id => fetch(`/api/stacks/${id}`, { method: 'DELETE' }))
           );
-          allPosts = allPosts.filter((p: any) => !pendingDeletedStackIds.includes(p.id));
-          pendingDeletedStackIds = [];
+          state.allPosts = state.allPosts.filter((p: any) => !state.pendingDeletedStackIds.includes(p.id));
+          state.pendingDeletedStackIds = [];
         }
 
         // 2. Process order
-        if (progressStatusText) progressStatusText.innerText = 'Linking arrangement...';
-        if (isExpanded) {
+        if (state.progressStatusText) state.progressStatusText.innerText = 'Linking arrangement...';
+        if (state.isExpanded) {
           // Save expanded photo order
           const photoNodes = Array.from(document.querySelectorAll('.gallery-item-wrapper[data-photo-id]'));
           const expandedOrder = photoNodes.map((node, i) => ({
@@ -1225,7 +1180,7 @@ export function initGallery(config: GalleryConfig) {
             // Use a Map for O(1) matching efficiency and reliability
             const orderMap = new Map(expandedOrder.map(item => [item.photoId, item.order]));
             
-            for (const post of allPosts) {
+            for (const post of state.allPosts) {
               if (post.images) {
                 for (const img of post.images) {
                   const pid = typeof img === 'object' ? img.photoId : '';
@@ -1240,35 +1195,35 @@ export function initGallery(config: GalleryConfig) {
           renderExpandedGallery();
         } else {
           // Save stack order
-          const orderedPosts = newOrder.map(id => allPosts.find((p: any) => p.id === id)).filter(Boolean);
-          const missingPosts = allPosts.filter((p: any) => !newOrder.includes(p.id));
+          const orderedPosts = newOrder.map(id => state.allPosts.find((p: any) => p.id === id)).filter(Boolean);
+          const missingPosts = state.allPosts.filter((p: any) => !newOrder.includes(p.id));
           const updatedPosts = [...orderedPosts, ...missingPosts];
           await savePostsToR2(updatedPosts, config.saveScope);
-          allPosts = updatedPosts;
+          state.allPosts = updatedPosts;
           exitEditMode();
           renderGallery();
         }
-        hiddenStatusChanged = false;
-        if (progressBarInner) progressBarInner.style.width = '100%';
-        if (progressStatusText) progressStatusText.innerText = 'Changes saved!';
-        refreshPageBtn?.classList.add('active');
+        state.hiddenStatusChanged = false;
+        if (state.progressBarInner) state.progressBarInner.style.width = '100%';
+        if (state.progressStatusText) state.progressStatusText.innerText = 'Changes saved!';
+        state.refreshPageBtn?.classList.add('active');
       } catch (e: any) {
         console.error('Save failed:', e);
-        if (progressStatusText) progressStatusText.innerText = `Error: ${e.message}`;
+        if (state.progressStatusText) state.progressStatusText.innerText = `Error: ${e.message}`;
         showSystemToast(`Failed: ${e.message}`, true);
         // Re-render in case of error to restore state
-        if (isExpanded) renderExpandedGallery();
+        if (state.isExpanded) renderExpandedGallery();
         else renderGallery();
       }
     };
 
-    if (pendingDeletedStackIds.length > 0 || pendingDeletedPhotoIds.length > 0) {
+    if (state.pendingDeletedStackIds.length > 0 || state.pendingDeletedPhotoIds.length > 0) {
       const toast = document.getElementById('undo-toast');
       const text = document.getElementById('undo-toast-text');
       const btn = document.getElementById('undo-toast-btn');
       
       if (toast && text && btn) {
-        const totalDeletes = pendingDeletedStackIds.length + pendingDeletedPhotoIds.length;
+        const totalDeletes = state.pendingDeletedStackIds.length + state.pendingDeletedPhotoIds.length;
         text.innerText = `Deleting ${totalDeletes} item${totalDeletes > 1 ? 's' : ''}...`;
         toast.classList.add('visible');
         
@@ -1289,10 +1244,10 @@ export function initGallery(config: GalleryConfig) {
           btn.removeEventListener('click', undo);
           
           // Revert deletions
-          pendingDeletedStackIds = [];
-          pendingDeletedPhotoIds = [];
+          state.pendingDeletedStackIds = [];
+          state.pendingDeletedPhotoIds = [];
           exitEditMode();
-          if (isExpanded) renderExpandedGallery();
+          if (state.isExpanded) renderExpandedGallery();
           else renderGallery();
         };
         
@@ -1312,7 +1267,7 @@ export function initGallery(config: GalleryConfig) {
     const newConfirmDeleteBtn = origConfirmDeleteBtn.cloneNode(true) as HTMLElement;
     origConfirmDeleteBtn.parentNode!.replaceChild(newConfirmDeleteBtn, origConfirmDeleteBtn);
     newConfirmDeleteBtn.addEventListener('click', () => { 
-      closeModal(confirmDeleteModal);
+      closeModal(state.confirmDeleteModal);
     });
   }
 
@@ -1321,21 +1276,21 @@ export function initGallery(config: GalleryConfig) {
     const newCancelDeleteBtn = origCancelDeleteBtn.cloneNode(true) as HTMLElement;
     origCancelDeleteBtn.parentNode!.replaceChild(newCancelDeleteBtn, origCancelDeleteBtn);
     newCancelDeleteBtn.addEventListener('click', () => {
-      closeModal(confirmDeleteModal);
+      closeModal(state.confirmDeleteModal);
     });
   }
 
   // --- File Input Handlers ---
-  fileInput?.addEventListener('click', () => { filePickerActive = true; });
-  fileInput?.addEventListener('change', () => {
-    filePickerActive = false;
-    if (fileInput!.files && fileInput!.files.length > 0) {
-      const filesArray = Array.from(fileInput!.files);
+  state.fileInput?.addEventListener('click', () => { state.filePickerActive = true; });
+  state.fileInput?.addEventListener('change', () => {
+    state.filePickerActive = false;
+    if (state.fileInput!.files && state.fileInput!.files.length > 0) {
+      const filesArray = Array.from(state.fileInput!.files);
       let loadedCount = 0;
       filesArray.forEach((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          pendingUploadFiles.push({ file, dataUrl: e.target!.result as string });
+          state.pendingUploadFiles.push({ file, dataUrl: e.target!.result as string });
           loadedCount++;
           if (loadedCount === filesArray.length) {
             renderLocalPreviewGrid();
@@ -1344,130 +1299,130 @@ export function initGallery(config: GalleryConfig) {
         reader.readAsDataURL(file);
       });
     }
-    if (fileInput) fileInput.value = '';
+    if (state.fileInput) state.fileInput.value = '';
   });
-  fileInput?.addEventListener('cancel', () => { filePickerActive = false; });
+  state.fileInput?.addEventListener('cancel', () => { state.filePickerActive = false; });
 
-  addBtn?.addEventListener('click', () => {
-    pendingAction = 'IMPORT';
-    openModal(importModal);
+  state.addBtn?.addEventListener('click', () => {
+    state.pendingAction = 'IMPORT';
+    openModal(state.importModal);
   });
 
   document.getElementById('close-import-modal')?.addEventListener('click', () => {
-    pendingUploadFiles = [];
+    state.pendingUploadFiles = [];
     renderLocalPreviewGrid();
-    if (fileInput) fileInput.value = '';
-    closeModal(importModal);
+    if (state.fileInput) state.fileInput.value = '';
+    closeModal(state.importModal);
   });
-  refreshPageBtn?.addEventListener('click', () => window.location.reload());
+  state.refreshPageBtn?.addEventListener('click', () => window.location.reload());
 
   document.getElementById('confirm-import')?.addEventListener('click', () => {
     handleLocalUpload();
-    closeModal(importModal);
+    closeModal(state.importModal);
   });
 
   // --- Mini Gallery Events ---
-  miniImportBtn?.addEventListener('click', () => {
-    filePickerActive = true;
-    miniFileInput?.click();
+  state.miniImportBtn?.addEventListener('click', () => {
+    state.filePickerActive = true;
+    state.miniFileInput?.click();
   });
 
-  miniFileInput?.addEventListener('change', (e: Event) => {
-    filePickerActive = false;
+  state.miniFileInput?.addEventListener('change', (e: Event) => {
+    state.filePickerActive = false;
     const files = (e.target as HTMLInputElement).files;
     if (!files) return;
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = (re: any) => {
-        currentMiniImages.push(re.target.result);
+        state.currentMiniImages.push(re.target.result);
         renderMiniGallery();
       };
       reader.readAsDataURL(file);
     });
   });
-  miniFileInput?.addEventListener('cancel', () => { filePickerActive = false; });
+  state.miniFileInput?.addEventListener('cancel', () => { state.filePickerActive = false; });
 
-  closeMiniGalleryBtn?.addEventListener('click', () => {
-    const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages ||
-                      (miniCaptionInput?.value || '') !== originalMiniCaption;
+  state.closeMiniGalleryBtn?.addEventListener('click', () => {
+    const hasChanges = JSON.stringify(state.currentMiniImages) !== state.originalMiniImages ||
+                      (state.miniCaptionInput?.value || '') !== state.originalMiniCaption;
     if (hasChanges) {
-      pendingAction = 'DISCARD_MINI_GALLERY';
-      openModal(confirmDiscardModal);
+      state.pendingAction = 'DISCARD_MINI_GALLERY';
+      openModal(state.confirmDiscardModal);
     } else {
-      closeModal(miniGalleryModal);
+      closeModal(state.miniGalleryModal);
     }
   });
 
   // --- Confirm Mini Gallery (R2 upload for new images) ---
-  confirmMiniGalleryBtn?.addEventListener('click', async () => {
-    if (!currentEditingWrapper) { closeModal(miniGalleryModal); return; }
-    const postId = currentEditingWrapper.getAttribute('data-id');
-    const post = allPosts.find((p: any) => p.id === postId);
-    const canEdit = galleryConfig.isAdmin || (post && post.owner_clerk_id === galleryConfig.userId);
+  state.confirmMiniGalleryBtn?.addEventListener('click', async () => {
+    if (!state.currentEditingWrapper) { closeModal(state.miniGalleryModal); return; }
+    const postId = state.currentEditingWrapper.getAttribute('data-id');
+    const post = state.allPosts.find((p: any) => p.id === postId);
+    const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
 
     if (!canEdit) {
-      closeModal(miniGalleryModal);
+      closeModal(state.miniGalleryModal);
       return;
     }
 
-    const newCaption = miniCaptionInput?.value || '';
-    const newAuthor = currentEditingWrapper?.getAttribute('data-author') || '';
-    const hasChanges = JSON.stringify(currentMiniImages) !== originalMiniImages ||
-                      newCaption !== originalMiniCaption;
-    if (!hasChanges) { closeModal(miniGalleryModal); return; }
+    const newCaption = state.miniCaptionInput?.value || '';
+    const newAuthor = state.currentEditingWrapper?.getAttribute('data-author') || '';
+    const hasChanges = JSON.stringify(state.currentMiniImages) !== state.originalMiniImages ||
+                      newCaption !== state.originalMiniCaption;
+    if (!hasChanges) { closeModal(state.miniGalleryModal); return; }
 
     const newDataUrls: {idx: number; dataUrl: string}[] = [];
-    currentMiniImages.forEach((src, idx) => {
+    state.currentMiniImages.forEach((src, idx) => {
       if (src.startsWith('data:')) newDataUrls.push({ idx, dataUrl: src });
     });
 
     const executeSave = async () => {
-      closeModal(miniGalleryModal);
-      openModal(progressModal);
-      if (progressTitle) progressTitle.innerText = 'Updating Album...';
-      if (progressStatusText) progressStatusText.innerText = 'Uploading new images...';
-      if (progressBarInner) progressBarInner.style.width = '10%';
+      closeModal(state.miniGalleryModal);
+      openModal(state.progressModal);
+      if (state.progressTitle) state.progressTitle.innerText = 'Updating Album...';
+      if (state.progressStatusText) state.progressStatusText.innerText = 'Uploading new images...';
+      if (state.progressBarInner) state.progressBarInner.style.width = '10%';
 
       try {
         const timestamp = Date.now();
         for (let i = 0; i < newDataUrls.length; i++) {
           const { idx, dataUrl } = newDataUrls[i];
-          if (progressStatusText) progressStatusText.innerText = `Uploading image ${i + 1}/${newDataUrls.length}...`;
+          if (state.progressStatusText) state.progressStatusText.innerText = `Uploading image ${i + 1}/${newDataUrls.length}...`;
           
           const basePercent = 10 + (i / newDataUrls.length) * 50;
           const filePercentChunk = 50 / newDataUrls.length;
-          if (progressBarInner) progressBarInner.style.width = `${basePercent}%`;
+          if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent}%`;
 
           const blob = dataUrlToBlob(dataUrl);
           const fileName = `p_${postId}_add_${timestamp}_${i}.jpg`;
           const finalUrl = await uploadToR2(blob, fileName, (p) => {
-            if (progressBarInner) progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
+            if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
           });
-          currentMiniImages[idx] = finalUrl;
+          state.currentMiniImages[idx] = finalUrl;
         }
 
-        if (progressStatusText) progressStatusText.innerText = 'Saving...';
-        if (progressBarInner) progressBarInner.style.width = '80%';
+        if (state.progressStatusText) state.progressStatusText.innerText = 'Saving...';
+        if (state.progressBarInner) state.progressBarInner.style.width = '80%';
 
-        const updatedPost = allPosts.find((p: any) => p.id === postId);
+        const updatedPost = state.allPosts.find((p: any) => p.id === postId);
         if (updatedPost) {
-          updatedPost.images = [...currentMiniImages];
+          updatedPost.images = [...state.currentMiniImages];
           updatedPost.caption = newCaption;
           updatedPost.author = newAuthor;
         }
-        await savePostsToR2(allPosts, config.saveScope);
+        await savePostsToR2(state.allPosts, config.saveScope);
         renderGallery();
 
-        if (progressBarInner) progressBarInner.style.width = '100%';
-        if (progressStatusText) progressStatusText.innerText = 'Album updated!';
-        refreshPageBtn?.classList.add('active');
+        if (state.progressBarInner) state.progressBarInner.style.width = '100%';
+        if (state.progressStatusText) state.progressStatusText.innerText = 'Album updated!';
+        state.refreshPageBtn?.classList.add('active');
       } catch (e: any) {
-        if (progressStatusText) progressStatusText.innerText = `Error: ${e.message}`;
+        if (state.progressStatusText) state.progressStatusText.innerText = `Error: ${e.message}`;
       }
     };
 
-    const originalArr = JSON.parse(originalMiniImages);
-    let deletedImages = originalArr.filter((img: string) => !currentMiniImages.includes(img));
+    const originalArr = JSON.parse(state.originalMiniImages);
+    let deletedImages = originalArr.filter((img: string) => !state.currentMiniImages.includes(img));
 
     if (deletedImages.length > 0) {
       const thumbContainer = document.getElementById('delete-thumbnails-container');
@@ -1505,7 +1460,7 @@ export function initGallery(config: GalleryConfig) {
             
             // Revert deletions
             deletedImages = [];
-            closeModal(miniGalleryModal);
+            closeModal(state.miniGalleryModal);
             // We just close the modal without saving, so user doesn't lose data but doesn't commit either.
           };
           
