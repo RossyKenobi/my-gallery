@@ -91,7 +91,7 @@ async function generateLQIP(file: Blob): Promise<string> {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
-      const maxDim = 60;
+      const maxDim = 120;
       if (width > maxDim || height > maxDim) {
         if (width > height) {
           height = Math.round(height * (maxDim / width));
