@@ -118,9 +118,9 @@ header {
   padding: 0.5rem 0;
   z-index: 999;
   /* Glassmorphism — synced with navbar via JS */
-  background: rgba(0,0,0,0.01);
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   transition: background-color 0.1s linear, backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear;
 }
@@ -1081,9 +1081,9 @@ body.is-editing .sortable-ghost .gallery-item {
   width: max-content;
   min-width: 0;
   height: auto;
-  background: rgba(0, 0, 0, 0.01);
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 999;
   display: flex;
   flex-direction: column;
