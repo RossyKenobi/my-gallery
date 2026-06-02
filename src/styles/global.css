@@ -323,6 +323,7 @@ header {
   position: relative;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.03);
+  background-clip: padding-box; /* Prevent background from bleeding into the transparent border */
   box-sizing: border-box; /* strict outer bounds locking */
   border: 0px solid transparent;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
