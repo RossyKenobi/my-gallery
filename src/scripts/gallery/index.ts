@@ -301,6 +301,7 @@ function buildExpandedPhotos(): any[] {
         author: post.author,
         owner_username: post.owner_username,
         owner_clerk_id: post.owner_clerk_id,
+        isPortrait: post.isPortrait,
       });
     }
   }
@@ -335,9 +336,11 @@ function createExpandedItemHTML(photo: any): string {
   const lqip = photo.lqip || '';
   const lqipStyle = lqip ? `background-image: url('${lqip}'); background-size: cover; background-position: center;` : '';
   const srcset = (thumbnail !== photo.url) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photo.url)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
+  
+  const orientationClass = photo.isPortrait === true ? 'is-portrait' : 'is-landscape';
 
   return `
-    <div class="gallery-item-wrapper" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
+    <div class="gallery-item-wrapper ${orientationClass}" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
       <a href="${escapeHTML(photo.url)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(photo.url)}" style="${lqipStyle}">
         <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
