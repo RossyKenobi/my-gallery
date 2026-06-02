@@ -35,21 +35,21 @@ export function initHeroScroll() {
           // Sync custom user menu glassmorphism with navbar
           const userMenu = document.getElementById('user-menu-popover');
           if (userMenu) {
-            const baseOpacity = 0.2;
-            const baseBlur = 12;
-            userMenu.style.background = `rgba(0, 0, 0, ${baseOpacity + (navProgress * 0.1)})`;
-            userMenu.style.backdropFilter = `blur(${baseBlur + (navProgress * 5)}px)`;
-            userMenu.style.webkitBackdropFilter = `blur(${baseBlur + (navProgress * 5)}px)`;
+            const baseOpacity = 0.01;
+            const baseBlur = 1;
+            userMenu.style.background = `rgba(0, 0, 0, ${baseOpacity + (navProgress * 0.05)})`;
+            userMenu.style.backdropFilter = `blur(${baseBlur + (navProgress * 2)}px)`;
+            userMenu.style.webkitBackdropFilter = `blur(${baseBlur + (navProgress * 2)}px)`;
           }
 
           // Sync mobile menu overlay glassmorphism with navbar
           const mobileOverlay = document.getElementById('mobile-menu-overlay');
           if (mobileOverlay) {
-            const baseOpacity = 0.2;
-            const baseBlur = 12;
-            mobileOverlay.style.background = `rgba(0, 0, 0, ${baseOpacity + (navProgress * 0.1)})`;
-            mobileOverlay.style.backdropFilter = `blur(${baseBlur + (navProgress * 5)}px)`;
-            mobileOverlay.style.webkitBackdropFilter = `blur(${baseBlur + (navProgress * 5)}px)`;
+            const baseOpacity = 0.01;
+            const baseBlur = 1;
+            mobileOverlay.style.background = `rgba(0, 0, 0, ${baseOpacity + (navProgress * 0.05)})`;
+            mobileOverlay.style.backdropFilter = `blur(${baseBlur + (navProgress * 2)}px)`;
+            mobileOverlay.style.webkitBackdropFilter = `blur(${baseBlur + (navProgress * 2)}px)`;
           }
         }
 
