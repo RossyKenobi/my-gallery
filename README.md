@@ -54,7 +54,14 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 
 ## 📝 Changelog
 
-### v1.6.0 (Current)
+### v2.0.0 (Current)
+- **Architecture Decoupling**: Completely refactored the monolithic `gallery.ts` into an isolated, state-driven module system, permanently resolving closure-related UI locks and memory leaks.
+- **Performance & PWA**: Transformed the site into a Progressive Web App (PWA) with Service Worker offline caching. Shifted image compression to a non-blocking `OffscreenCanvas` worker, and added LQIP (Low-Quality Image Placeholders) with smooth fade-in transitions.
+- **UX & Motion Design**: Introduced staggered `IntersectionObserver` reveal animations for the masonry grid, real-time responsive glassmorphism for navigation menus (resolving deep CSS Backdrop Root clipping bugs), and full `prefers-reduced-motion` accessibility support.
+- **Upload & Management**: Revamped the album builder with drag-and-drop zones, real-time byte-level upload progress bars, and a non-blocking Toast notification system for "Undo Delete" actions.
+- **The "About" Experience**: Injected a 100vh premium "About" section utilizing Cormorant Garamond typography and user-selectable poetic prefaces.
+
+### v1.6.0
 - **Album Workflow Overhaul**: Redesigned the "Create Album" and "Edit Album" modals, introducing an incremental upload workflow with multi-batch photo selection and instant mini-previews.
 - **Micro-Management**: Added the ability to dynamically delete individual photos from the preview queue *before* confirming an upload.
 - **UI Terminology Normalization**: Completely standardized the user interface lexicon, replacing all legacy terms ("Stack", "Image", "Order") with a cleaner, uniform "Album", "Photo", and "Changes" hierarchy.
