@@ -26,9 +26,14 @@ export function initHeroScroll() {
         if (minimalNav) {
           const navTransitionThreshold = viewportHeight * 0.66;
           const navProgress = Math.min(scrollY / navTransitionThreshold, 1);
-          minimalNav.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.05})`;
-          minimalNav.style.backdropFilter = `blur(${navProgress * 2}px)`;
-          minimalNav.style.webkitBackdropFilter = `blur(${navProgress * 2}px)`;
+          
+          const navGlassBg = document.getElementById('nav-glass-bg');
+          if (navGlassBg) {
+            navGlassBg.style.backgroundColor = `rgba(0, 0, 0, ${navProgress * 0.05})`;
+            navGlassBg.style.backdropFilter = `blur(${navProgress * 2}px)`;
+            navGlassBg.style.webkitBackdropFilter = `blur(${navProgress * 2}px)`;
+          }
+
           if (scrollY > 20) minimalNav.classList.add('is-scrolled');
           else minimalNav.classList.remove('is-scrolled');
 
