@@ -91,7 +91,7 @@ async function generateLQIP(file: Blob): Promise<string> {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
-      const maxDim = 20;
+      const maxDim = 60;
       if (width > maxDim || height > maxDim) {
         if (width > height) {
           height = Math.round(height * (maxDim / width));
@@ -105,10 +105,8 @@ async function generateLQIP(file: Blob): Promise<string> {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d')!;
-      // Simple blur filter for better LQIP aesthetics
-      ctx.filter = 'blur(2px)';
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.3));
+      resolve(canvas.toDataURL('image/jpeg', 0.4));
       URL.revokeObjectURL(img.src);
     };
     img.onerror = () => reject(new Error('Failed to load image for LQIP'));
