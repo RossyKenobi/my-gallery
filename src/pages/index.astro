@@ -26,7 +26,7 @@ if (currentUserId) {
 let siteTitle = 'Silent Flânerie';
 let siteSubtitle = 'Unscripted drifts through the quotidian.';
 let siteBackground = '/images/hero_background.jpg';
-let siteAbout = 'Silent Flânerie is a visual exploration of the overlooked beauty in our daily unscripted drifts through the quotidian.';
+let siteAbout = 'For the perfect flâneur, for the passionate spectator, it is an immense joy to set up house in the heart of the multitude, amid the ebb and flow of movement, in the midst of the fugitive and the infinite. — Charles Baudelaire';
 try {
   const { sql } = await import('../lib/db');
   const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle', 'site_background', 'site_about')`;
