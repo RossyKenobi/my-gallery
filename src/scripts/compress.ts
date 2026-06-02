@@ -105,15 +105,15 @@ async function generateLQIP(file: Blob): Promise<string> {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d')!;
-      ctx.filter = 'blur(2px)';
+      ctx.filter = 'blur(1px)';
       ctx.drawImage(img, 0, 0, width, height);
       
-      // 添加 10% 的黑色半透明遮罩以柔化粗糙感并模拟降低不透明度
+      // 添加 5% 的黑色半透明遮罩以柔化粗糙感并模拟降低不透明度
       ctx.filter = 'none';
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, width, height);
       
-      resolve(canvas.toDataURL('image/jpeg', 0.65));
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
       URL.revokeObjectURL(img.src);
     };
     img.onerror = () => reject(new Error('Failed to load image for LQIP'));
