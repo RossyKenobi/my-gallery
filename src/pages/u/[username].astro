@@ -290,8 +290,8 @@ const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
       };
     </script>
     <script>
-      import { initGallery } from '../../scripts/gallery';
-      import { initUserMenu, initNavigationInterception, initClerkTextObserver, initClerkSignInAndInvite } from '../../scripts/clerk-auth';
+      import { initGallery } from '../../scripts/gallery/index';
+      import { initUserMenu, initNavigationInterception, initClerkTextObserver, initClerkSignInAndInvite } from '../../scripts/clerk-auth/index';
       import { initHeroScroll } from '../../scripts/hero-scroll';
 
       // Register Service Worker for PWA / Offline Gallery

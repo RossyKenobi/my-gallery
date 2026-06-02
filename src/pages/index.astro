@@ -270,9 +270,9 @@ try {
       };
     </script>
     <script>
-      import { initGallery } from '../scripts/gallery';
+      import { initGallery } from '../scripts/gallery/index';
       import { initHeroScroll } from '../scripts/hero-scroll';
-      import { initUserMenu, initNavigationInterception, initClerkSignInAndInvite, initClerkTextObserver } from '../scripts/clerk-auth';
+      import { initUserMenu, initNavigationInterception, initClerkSignInAndInvite, initClerkTextObserver } from '../scripts/clerk-auth/index';
 
       // Register Service Worker for PWA / Offline Gallery
       if ('serviceWorker' in navigator) {
