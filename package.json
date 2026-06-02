@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/vercel": "^7.8.2",
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/client-s3": "^3.1021.0",
@@ -27,6 +28,7 @@
     "nanoid": "^5.1.7",
     "photoswipe": "^5.4.3",
     "sharp": "^0.33.5",
-    "sortablejs": "^1.15.7"
+    "sortablejs": "^1.15.7",
+    "typescript": "^5.9.3"
   }
 }
