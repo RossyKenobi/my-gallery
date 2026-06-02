@@ -17,7 +17,7 @@ async function ensureTable() {
 export const GET: APIRoute = async () => {
   try {
     await ensureTable();
-    const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle')`;
+    const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle', 'site_about')`;
     const settings: Record<string, string> = {};
     rows.forEach(r => settings[r.key] = r.value);
     return new Response(JSON.stringify(settings), { status: 200 });
@@ -35,7 +35,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   if (!adminFlag) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 
   try {
-    const { title, subtitle } = await request.json();
+    const { title, subtitle, about } = await request.json();
     await ensureTable();
 
     if (title !== undefined) {
@@ -47,6 +47,12 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     if (subtitle !== undefined) {
       await sql`
         INSERT INTO site_settings (key, value) VALUES ('site_subtitle', ${subtitle})
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+      `;
+    }
+    if (about !== undefined) {
+      await sql`
+        INSERT INTO site_settings (key, value) VALUES ('site_about', ${about})
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
       `;
     }

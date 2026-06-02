@@ -26,13 +26,15 @@ if (currentUserId) {
 let siteTitle = 'Silent Flânerie';
 let siteSubtitle = 'Unscripted drifts through the quotidian.';
 let siteBackground = '/images/hero_background.jpg';
+let siteAbout = 'Silent Flânerie is a visual exploration of the overlooked beauty in our daily unscripted drifts through the quotidian.';
 try {
   const { sql } = await import('../lib/db');
-  const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle', 'site_background')`;
+  const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle', 'site_background', 'site_about')`;
   rows.forEach(r => {
     if (r.key === 'site_title') siteTitle = r.value;
     if (r.key === 'site_subtitle') siteSubtitle = r.value;
     if (r.key === 'site_background') siteBackground = r.value;
+    if (r.key === 'site_about') siteAbout = r.value;
   });
 } catch (e) {
   // DB not migrated yet
@@ -92,6 +94,7 @@ try {
     <nav class="minimal-nav">
       <a href="/" class="nav-brand">THE GALLERY</a>
       <div class="nav-links">
+        <a href="#about" class="nav-link">About</a>
         <a href="#contact" class="nav-link">Contact</a>
         { !currentUserId ? (
           <button class="nav-link" id="custom-login-btn">Login</button>
@@ -108,6 +111,9 @@ try {
           </div>
         )}
       </div>
+      <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle mobile menu">
+        <span></span><span></span><span></span>
+      </button>
     </nav>
 
     <!-- Full-Screen Hero Section -->
@@ -135,6 +141,12 @@ try {
       showChangeBgBtn={isCurrentUserAdmin}
       currentUsername={currentUsername}
     />
+
+    <div class="gallery-divider"></div>
+    <section id="about" class="about-section">
+      <div class="about-content" id="site-about-edit" contenteditable={isCurrentUserAdmin ? "true" : undefined} spellcheck="false" suppressContentEditableWarning="true" style={(isCurrentUserAdmin ? "cursor: text; " : "") + "position: relative; z-index: 10;"}>{siteAbout}</div>
+    </section>
+    <div class="gallery-divider"></div>
 
     <section id="contact" class="contact-section">
       <div class="contact-container">
@@ -324,6 +336,7 @@ try {
       if (AUTH.isAdmin) {
         const titleEl = document.getElementById('site-title-edit');
         const subtitleEl = document.getElementById('site-subtitle-edit');
+        const aboutEl = document.getElementById('site-about-edit');
         let textTimeout: any;
 
         const handleTextChange = () => {
@@ -336,7 +349,8 @@ try {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   title: titleEl.innerText.trim(),
-                  subtitle: subtitleEl.innerText.trim()
+                  subtitle: subtitleEl.innerText.trim(),
+                  about: aboutEl ? aboutEl.innerText.trim() : undefined
                 })
               });
             } catch (e) {
@@ -347,6 +361,7 @@ try {
 
         titleEl?.addEventListener('input', handleTextChange);
         subtitleEl?.addEventListener('input', handleTextChange);
+        aboutEl?.addEventListener('input', handleTextChange);
         
         const preventEnter = (e: KeyboardEvent) => {
           if (e.key === 'Enter') {
@@ -356,6 +371,7 @@ try {
         };
         titleEl?.addEventListener('keydown', preventEnter);
         subtitleEl?.addEventListener('keydown', preventEnter);
+        aboutEl?.addEventListener('keydown', preventEnter);
 
         // Allow clicking outside to blur explicitly
         document.addEventListener('click', (e) => {
@@ -444,6 +460,47 @@ try {
           if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
         });
       }
+    </script>
+
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+      <a href="#about" class="nav-link mobile-link">About</a>
+      <a href="#contact" class="nav-link mobile-link">Contact</a>
+      { !currentUserId ? (
+        <button class="nav-link mobile-link" id="mobile-login-btn">Login</button>
+      ) : (
+        <>
+          {currentUsernameLower && (
+            <a href={`/u/${currentUsernameLower}`} class="user-menu-item mobile-link" id="mobile-mypage-btn">My Page</a>
+          )}
+          <button class="user-menu-item mobile-link" id="mobile-account-btn">Account</button>
+          <button class="user-menu-item user-menu-signout mobile-link" id="mobile-signout-btn">Sign out</button>
+        </>
+      )}
+    </div>
+
+    <script>
+      document.addEventListener('astro:page-load', () => {
+        const btn = document.getElementById('mobile-menu-btn');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const links = document.querySelectorAll('.mobile-link');
+        
+        if (btn && overlay) {
+          btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            overlay.classList.toggle('active');
+          });
+          links.forEach(link => {
+            link.addEventListener('click', (e) => {
+              btn.classList.remove('active');
+              overlay.classList.remove('active');
+              
+              if (link.id === 'mobile-login-btn') { e.preventDefault(); document.getElementById('custom-login-btn')?.click(); }
+              if (link.id === 'mobile-account-btn') { e.preventDefault(); document.getElementById('user-menu-manage')?.click(); }
+              if (link.id === 'mobile-signout-btn') { e.preventDefault(); document.getElementById('user-menu-signout')?.click(); }
+            });
+          });
+        }
+      });
     </script>
   </body>
 </html>

@@ -113,6 +113,9 @@ try {
           </div>
         )}
       </div>
+      <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle mobile menu">
+        <span></span><span></span><span></span>
+      </button>
     </nav>
 
     <!-- Profile Hero Section -->
@@ -498,6 +501,46 @@ try {
           if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
         });
       }
+    </script>
+
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+      <a href="#contact" class="nav-link mobile-link">Contact</a>
+      { !currentUserId ? (
+        <button class="nav-link mobile-link" id="mobile-login-btn">Login</button>
+      ) : (
+        <>
+          {currentUsernameLower && currentUsernameLower !== username?.toLowerCase() && (
+            <a href={`/u/${currentUsernameLower}`} class="user-menu-item mobile-link" id="mobile-mypage-btn">My Page</a>
+          )}
+          <button class="user-menu-item mobile-link" id="mobile-account-btn">Account</button>
+          <button class="user-menu-item user-menu-signout mobile-link" id="mobile-signout-btn">Sign out</button>
+        </>
+      )}
+    </div>
+
+    <script>
+      document.addEventListener('astro:page-load', () => {
+        const btn = document.getElementById('mobile-menu-btn');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        const links = document.querySelectorAll('.mobile-link');
+        
+        if (btn && overlay) {
+          btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            overlay.classList.toggle('active');
+          });
+          links.forEach(link => {
+            link.addEventListener('click', (e) => {
+              btn.classList.remove('active');
+              overlay.classList.remove('active');
+              
+              if (link.id === 'mobile-login-btn') { e.preventDefault(); document.getElementById('custom-login-btn')?.click(); }
+              if (link.id === 'mobile-account-btn') { e.preventDefault(); document.getElementById('user-menu-manage')?.click(); }
+              if (link.id === 'mobile-signout-btn') { e.preventDefault(); document.getElementById('user-menu-signout')?.click(); }
+            });
+          });
+        }
+      });
     </script>
   </body>
 </html>
