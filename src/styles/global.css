@@ -347,8 +347,16 @@ header {
   opacity: 0;
   filter: blur(10px);
   transform: scale(1.02);
-  transition: opacity 1.2s ease-in-out, filter 1.2s ease-in-out, transform 1.2s ease-in-out;
+  transition: opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
   will-change: opacity, filter, transform;
+}
+@keyframes placeholderPulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+.gallery-item:has(img:not(.loaded)) {
+  animation: placeholderPulse 2s infinite ease-in-out;
 }
 .gallery-item img.loaded {
   opacity: 1;
