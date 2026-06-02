@@ -1150,9 +1150,6 @@ body.is-editing .sortable-ghost .gallery-item {
 [contenteditable="true"].about-content {
   outline: none;
   cursor: text;
-  border: 1px dashed rgba(255, 255, 255, 0.3);
-  padding: 1rem;
-  border-radius: 8px;
 }
 
 /* --- #25 Prefers Reduced Motion --- */
