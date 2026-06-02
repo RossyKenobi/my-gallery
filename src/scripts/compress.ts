@@ -91,7 +91,7 @@ async function generateLQIP(file: Blob): Promise<string> {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
-      const maxDim = 360;
+      const maxDim = 480;
       if (width > maxDim || height > maxDim) {
         if (width > height) {
           height = Math.round(height * (maxDim / width));
@@ -107,6 +107,12 @@ async function generateLQIP(file: Blob): Promise<string> {
       const ctx = canvas.getContext('2d')!;
       ctx.filter = 'blur(2px)';
       ctx.drawImage(img, 0, 0, width, height);
+      
+      // 添加 10% 的黑色半透明遮罩以柔化粗糙感并模拟降低不透明度
+      ctx.filter = 'none';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
       resolve(canvas.toDataURL('image/jpeg', 0.4));
       URL.revokeObjectURL(img.src);
     };
