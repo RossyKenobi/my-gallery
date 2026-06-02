@@ -768,6 +768,100 @@ function openMiniGallery(wrapper: HTMLElement) {
 }
 
 // --- PhotoSwipe ---
+function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: string) {
+  pswp.on('uiRegister', function() {
+    // 1. Custom Caption
+    pswp.ui!.registerElement({
+      name: 'custom-caption', order: 9, isButton: false, appendTo: 'root', html: '',
+      onInit: (el: HTMLElement, pswpInstance: any) => {
+        pswpInstance.on('change', () => {
+          const currentAuthor = wrapper.getAttribute('data-author');
+          const currentOwnerUsername = wrapper.getAttribute('data-owner-username');
+          const captionStr = defaultCaption !== undefined ? defaultCaption : wrapper.getAttribute('data-caption') || '';
+          let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
+          
+          const displayAuthor = (currentAuthor && currentAuthor.trim() !== '') ? currentAuthor.trim() : (currentOwnerUsername ? currentOwnerUsername.trim() : '');
+          
+          if (displayAuthor) {
+            const upperAuthor = displayAuthor.toUpperCase();
+            if (currentOwnerUsername && currentOwnerUsername.trim() !== '') {
+              finalCaption += `<br>BY <a href="/u/${currentOwnerUsername.trim().toLowerCase()}" style="color: inherit; text-decoration: none;"><b>${upperAuthor}</b></a>`;
+            } else {
+              finalCaption += `<br>BY <b>${upperAuthor}</b>`;
+            }
+          }
+          el.innerHTML = finalCaption;
+        });
+      }
+    });
+
+    // 2. Photographer Button
+    pswp.ui!.registerElement({
+      name: 'photographer', order: 10, isButton: true, tagName: 'button', title: 'Author Profile',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+      onClick: (e: Event) => {
+        const username = wrapper.getAttribute('data-owner-username');
+        if (username) window.location.href = `/u/${username.trim().toLowerCase()}`;
+        else alert('Photographer profile not available.');
+      }
+    });
+
+    // 3. Download Original
+    pswp.ui!.registerElement({
+      name: 'download', order: 11, isButton: true, tagName: 'button', title: 'Download Image',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+      onClick: (e: Event, el: HTMLElement, pswpInstance: any) => {
+        const src = pswpInstance.currSlide?.data?.src;
+        if (src) {
+          const a = document.createElement('a');
+          a.href = src;
+          a.download = src.split('/').pop() || 'download';
+          a.target = '_blank';
+          a.click();
+        }
+      }
+    });
+
+    // 4. Twitter Share
+    pswp.ui!.registerElement({
+      name: 'share-twitter', order: 12, isButton: true, tagName: 'button', title: 'Share on X',
+      html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      onClick: () => {
+        const url = window.location.href;
+        const text = encodeURIComponent('Check out this shot from Silent Flânerie');
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
+      }
+    });
+
+    // 5. Copy Link
+    pswp.ui!.registerElement({
+      name: 'copy-link', order: 13, isButton: true, tagName: 'button', title: 'Copy Link',
+      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
+      onClick: async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          const toast = document.getElementById('undo-toast');
+          const text = document.getElementById('undo-toast-text');
+          const btn = document.getElementById('undo-toast-btn');
+          if (toast && text && btn) {
+            text.textContent = 'Link copied to clipboard';
+            btn.style.display = 'none';
+            toast.classList.add('visible');
+            setTimeout(() => {
+              toast.classList.remove('visible');
+              setTimeout(() => { btn.style.display = ''; }, 300);
+            }, 2000);
+          } else {
+            alert('Link copied to clipboard');
+          }
+        } catch (err) {
+          console.error('Failed to copy', err);
+        }
+      }
+    });
+  });
+}
+
 function attachGalleryListeners() {
   // Delete buttons
   document.querySelectorAll('.delete-btn').forEach((btn: any) => {
@@ -1470,99 +1564,7 @@ export function initGallery(config: GalleryConfig) {
   setupDragAndDrop('mini-gallery-grid', 'mini-file-input');
 
   // --- Initial Load ---
-function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: string) {
-  pswp.on('uiRegister', function() {
-    // 1. Custom Caption
-    pswp.ui!.registerElement({
-      name: 'custom-caption', order: 9, isButton: false, appendTo: 'root', html: '',
-      onInit: (el: HTMLElement, pswpInstance: any) => {
-        pswpInstance.on('change', () => {
-          const currentAuthor = wrapper.getAttribute('data-author');
-          const currentOwnerUsername = wrapper.getAttribute('data-owner-username');
-          const captionStr = defaultCaption !== undefined ? defaultCaption : wrapper.getAttribute('data-caption') || '';
-          let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
-          
-          const displayAuthor = (currentAuthor && currentAuthor.trim() !== '') ? currentAuthor.trim() : (currentOwnerUsername ? currentOwnerUsername.trim() : '');
-          
-          if (displayAuthor) {
-            const upperAuthor = displayAuthor.toUpperCase();
-            if (currentOwnerUsername && currentOwnerUsername.trim() !== '') {
-              finalCaption += `<br>BY <a href="/u/${currentOwnerUsername.trim().toLowerCase()}" style="color: inherit; text-decoration: none;"><b>${upperAuthor}</b></a>`;
-            } else {
-              finalCaption += `<br>BY <b>${upperAuthor}</b>`;
-            }
-          }
-          el.innerHTML = finalCaption;
-        });
-      }
-    });
 
-    // 2. Photographer Button
-    pswp.ui!.registerElement({
-      name: 'photographer', order: 10, isButton: true, tagName: 'button', title: 'Author Profile',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
-      onClick: (e: Event) => {
-        const username = wrapper.getAttribute('data-owner-username');
-        if (username) window.location.href = `/u/${username.trim().toLowerCase()}`;
-        else alert('Photographer profile not available.');
-      }
-    });
-
-    // 3. Download Original
-    pswp.ui!.registerElement({
-      name: 'download', order: 11, isButton: true, tagName: 'button', title: 'Download Image',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
-      onClick: (e: Event, el: HTMLElement, pswpInstance: any) => {
-        const src = pswpInstance.currSlide?.data?.src;
-        if (src) {
-          const a = document.createElement('a');
-          a.href = src;
-          a.download = src.split('/').pop() || 'download';
-          a.target = '_blank';
-          a.click();
-        }
-      }
-    });
-
-    // 4. Twitter Share
-    pswp.ui!.registerElement({
-      name: 'share-twitter', order: 12, isButton: true, tagName: 'button', title: 'Share on X',
-      html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-      onClick: () => {
-        const url = window.location.href;
-        const text = encodeURIComponent('Check out this shot from Silent Flânerie');
-        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
-      }
-    });
-
-    // 5. Copy Link
-    pswp.ui!.registerElement({
-      name: 'copy-link', order: 13, isButton: true, tagName: 'button', title: 'Copy Link',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
-      onClick: async () => {
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          const toast = document.getElementById('undo-toast');
-          const text = document.getElementById('undo-toast-text');
-          const btn = document.getElementById('undo-toast-btn');
-          if (toast && text && btn) {
-            text.textContent = 'Link copied to clipboard';
-            btn.style.display = 'none';
-            toast.classList.add('visible');
-            setTimeout(() => {
-              toast.classList.remove('visible');
-              setTimeout(() => { btn.style.display = ''; }, 300);
-            }, 2000);
-          } else {
-            alert('Link copied to clipboard');
-          }
-        } catch (err) {
-          console.error('Failed to copy', err);
-        }
-      }
-    });
-  });
-}
 
   loadGallery().then(() => {
     // Apply initial expand state after data loads
