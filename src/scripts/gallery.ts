@@ -477,6 +477,10 @@ function attachExpandedListeners() {
 
       const pswp = new PhotoSwipe({
         dataSource: [{ src, width: 0, height: 0 }],
+        closeSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+        zoomSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line class="pswp__zoom-icn-bar-v" x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>',
+        arrowPrevSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>',
+        arrowNextSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
         paddingFn: (_viewportSize: any) => {
           const pad = window.innerWidth > 768 ? window.innerWidth * 0.22 : 20;
           return { top: 40, bottom: 80, left: pad, right: pad };
@@ -798,7 +802,7 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
     // 2. Photographer Button
     pswp.ui!.registerElement({
       name: 'photographer', order: 10, isButton: true, tagName: 'button', title: 'Author Profile',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+      html: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
       onClick: (e: Event) => {
         const username = wrapper.getAttribute('data-owner-username');
         if (username) window.location.href = `/u/${username.trim().toLowerCase()}`;
@@ -809,7 +813,7 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
     // 3. Download Original
     pswp.ui!.registerElement({
       name: 'download', order: 11, isButton: true, tagName: 'button', title: 'Download Image',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+      html: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
       onClick: (e: Event, el: HTMLElement, pswpInstance: any) => {
         const src = pswpInstance.currSlide?.data?.src;
         if (src) {
@@ -825,7 +829,7 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
     // 4. Twitter Share
     pswp.ui!.registerElement({
       name: 'share-twitter', order: 12, isButton: true, tagName: 'button', title: 'Share on X',
-      html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      html: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line><path d="M22 2L15 15L22 22H18L13 15L8 22H2L9 9L2 2H6L11 9L16 2H22Z" fill="none"></path></svg>',
       onClick: () => {
         const url = window.location.href;
         const text = encodeURIComponent('Check out this shot from Silent Flânerie');
@@ -836,7 +840,7 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
     // 5. Copy Link
     pswp.ui!.registerElement({
       name: 'copy-link', order: 13, isButton: true, tagName: 'button', title: 'Copy Link',
-      html: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
+      html: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
       onClick: async () => {
         try {
           await navigator.clipboard.writeText(window.location.href);
@@ -935,6 +939,10 @@ function attachGalleryListeners() {
           dataSource: pswpItems,
           mainScrollEnd: true,
           spacing: window.innerWidth > 768 ? -0.35 : 0.05,
+          closeSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+          zoomSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line class="pswp__zoom-icn-bar-v" x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>',
+          arrowPrevSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>',
+          arrowNextSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
           paddingFn: (_viewportSize: any, _itemData: any, _index: number) => {
             const pad = window.innerWidth > 768 ? window.innerWidth * 0.22 : 20;
             return { top: 40, bottom: 80, left: pad, right: pad };

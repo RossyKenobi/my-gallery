@@ -774,6 +774,11 @@ body.is-editing .sortable-ghost .gallery-item {
   text-align: left;
 }
 
+/* PhotoSwipe Overrides */
+.pswp__button {
+  color: #ffffff !important;
+}
+
 /* PhotoSwipe Peeking Effect */
 .pswp__img {
   border-radius: 24px;
