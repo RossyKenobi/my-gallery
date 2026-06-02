@@ -1076,10 +1076,10 @@ body.is-editing .sortable-ghost .gallery-item {
 .mobile-menu-overlay {
   position: absolute;
   top: calc(100% + 15px);
-  right: 1.5rem;
+  right: 0;
   left: auto;
   width: max-content;
-  min-width: 160px;
+  min-width: 0;
   height: auto;
   background: rgba(0, 0, 0, 0.01);
   backdrop-filter: blur(1px);
@@ -1089,12 +1089,12 @@ body.is-editing .sortable-ghost .gallery-item {
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-end;
-  padding: 1.5rem 1.5rem;
+  padding: 1.25rem 1.25rem;
   gap: 1.25rem;
   opacity: 0;
   transform: translateY(-10px);
   pointer-events: none;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s linear, backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
@@ -1106,7 +1106,7 @@ body.is-editing .sortable-ghost .gallery-item {
 .mobile-menu-overlay .nav-link,
 .mobile-menu-overlay .user-menu-item {
   font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
+  font-size: 0.85rem;
   letter-spacing: 0.1em;
   color: white;
   text-decoration: none;
