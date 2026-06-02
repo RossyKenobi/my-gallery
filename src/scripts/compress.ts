@@ -113,7 +113,7 @@ async function generateLQIP(file: Blob): Promise<string> {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(0, 0, width, height);
       
-      resolve(canvas.toDataURL('image/jpeg', 0.4));
+      resolve(canvas.toDataURL('image/jpeg', 0.65));
       URL.revokeObjectURL(img.src);
     };
     img.onerror = () => reject(new Error('Failed to load image for LQIP'));
