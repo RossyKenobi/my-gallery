@@ -105,6 +105,7 @@ async function generateLQIP(file: Blob): Promise<string> {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d')!;
+      ctx.filter = 'blur(2px)';
       ctx.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL('image/jpeg', 0.4));
       URL.revokeObjectURL(img.src);
