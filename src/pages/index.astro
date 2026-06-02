@@ -114,6 +114,21 @@ try {
       <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle mobile menu">
         <span></span><span></span><span></span>
       </button>
+      <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+        <a href="#about" class="nav-link mobile-link">About</a>
+        <a href="#contact" class="nav-link mobile-link">Contact</a>
+        { !currentUserId ? (
+          <button class="nav-link mobile-link" id="mobile-login-btn">Login</button>
+        ) : (
+          <>
+            {currentUsernameLower && (
+              <a href={`/u/${currentUsernameLower}`} class="user-menu-item mobile-link" id="mobile-mypage-btn">My Page</a>
+            )}
+            <button class="user-menu-item mobile-link" id="mobile-account-btn">Account</button>
+            <button class="user-menu-item user-menu-signout mobile-link" id="mobile-signout-btn">Sign out</button>
+          </>
+        )}
+      </div>
     </nav>
 
     <!-- Full-Screen Hero Section -->
@@ -461,22 +476,6 @@ try {
         });
       }
     </script>
-
-    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
-      <a href="#about" class="nav-link mobile-link">About</a>
-      <a href="#contact" class="nav-link mobile-link">Contact</a>
-      { !currentUserId ? (
-        <button class="nav-link mobile-link" id="mobile-login-btn">Login</button>
-      ) : (
-        <>
-          {currentUsernameLower && (
-            <a href={`/u/${currentUsernameLower}`} class="user-menu-item mobile-link" id="mobile-mypage-btn">My Page</a>
-          )}
-          <button class="user-menu-item mobile-link" id="mobile-account-btn">Account</button>
-          <button class="user-menu-item user-menu-signout mobile-link" id="mobile-signout-btn">Sign out</button>
-        </>
-      )}
-    </div>
 
     <script>
       document.addEventListener('astro:page-load', () => {
