@@ -301,7 +301,7 @@ function buildExpandedPhotos(): any[] {
         author: post.author,
         owner_username: post.owner_username,
         owner_clerk_id: post.owner_clerk_id,
-        isPortrait: post.isPortrait,
+        isPortrait: typeof img === 'object' && img.isPortrait !== undefined ? img.isPortrait : post.isPortrait,
       });
     }
   }
@@ -376,11 +376,17 @@ function renderExpandedGallery() {
     };
     if (img.complete) {
       setOrientation();
-      img.classList.add('loaded');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          img.classList.add('loaded');
+        });
+      });
     } else {
       img.addEventListener('load', () => {
         setOrientation();
-        img.classList.add('loaded');
+        requestAnimationFrame(() => {
+          img.classList.add('loaded');
+        });
       });
     }
   });
@@ -971,10 +977,19 @@ async function handleLocalUpload() {
       const uploadedData = await uploadToR2(file, fileName, (p) => {
         if (progressBarInner) progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
       });
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(r => {
+        img.onload = r;
+        img.onerror = r;
+      });
+      const fileIsPortrait = (img.naturalHeight > img.naturalWidth);
+
       imageUrls.push({
         url: uploadedData.finalImageUrl,
         thumbnail_url: uploadedData.thumbnailUrl,
-        lqip: uploadedData.lqip
+        lqip: uploadedData.lqip,
+        isPortrait: fileIsPortrait
       });
     }
 

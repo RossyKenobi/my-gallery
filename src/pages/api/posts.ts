@@ -14,7 +14,7 @@ export async function getGalleryData(ownerFilter: string | null, sortMode: strin
           s.id, s.caption, s.author, s.category,
           s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
           u.username AS owner_username,
-          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.expanded_sort_order
+          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.expanded_sort_order, p.is_portrait AS photo_is_portrait
         FROM stacks s
         LEFT JOIN photos p ON p.stack_id = s.id
         LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
@@ -27,7 +27,7 @@ export async function getGalleryData(ownerFilter: string | null, sortMode: strin
           s.id, s.caption, s.author, s.category,
           s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
           u.username AS owner_username,
-          p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order
+          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.is_portrait AS photo_is_portrait
         FROM stacks s
         LEFT JOIN photos p ON p.stack_id = s.id
         LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
@@ -64,12 +64,15 @@ export async function getGalleryData(ownerFilter: string | null, sortMode: strin
             lqip: isFirst ? row.lqip : undefined,
             photoId: row.photo_id,
             expandedSortOrder: row.expanded_sort_order,
+            isPortrait: row.photo_is_portrait,
           });
         } else {
           stack.images.push({
             url: row.photo_url,
             thumbnail_url: row.thumbnail_url,
             lqip: isFirst ? row.lqip : undefined,
+            photoId: row.photo_id,
+            isPortrait: row.photo_is_portrait,
           });
         }
       }
