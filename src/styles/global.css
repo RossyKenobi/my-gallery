@@ -1985,7 +1985,7 @@ body > div[class*="cl-"] .cl-card label {
   opacity: 0;
   pointer-events: none;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 9999;
+  z-index: 100005;
 }
 .system-toast.is-error {
   background: rgba(255, 50, 50, 0.2);
