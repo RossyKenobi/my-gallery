@@ -232,7 +232,11 @@ function createGalleryItemHTML(post: any): string {
   const authorData = escapeHTML(post.author || '');
   const ownerUsernameData = escapeHTML(post.owner_username || '');
 
-  const orientationClass = post.isPortrait === true ? 'is-portrait' : 'is-landscape';
+  let isPortrait = post.isPortrait;
+  if (firstImage && typeof firstImage === 'object' && firstImage.isPortrait !== undefined) {
+    isPortrait = firstImage.isPortrait;
+  }
+  const orientationClass = isPortrait === true ? 'is-portrait' : 'is-landscape';
 
   let canEdit = false;
   if (galleryConfig.userId) {
@@ -266,7 +270,7 @@ function createGalleryItemHTML(post: any): string {
   const srcset = (thumbnail !== mainUrl) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(mainUrl)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
 
   return `
-    <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${escapeHTML(post.id)}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${post.isPortrait === undefined}">
+    <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${escapeHTML(post.id)}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${isPortrait === undefined}">
       <a href="${escapeHTML(mainUrl)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(mainUrl)}" style="${lqipStyle}">
         <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${captionData || 'Gallery Post'}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
@@ -533,11 +537,17 @@ function renderGallery() {
     };
     if (img.complete) {
       verifyOrientation();
-      img.classList.add('loaded');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          img.classList.add('loaded');
+        });
+      });
     } else {
       img.addEventListener('load', () => {
         verifyOrientation();
-        img.classList.add('loaded');
+        requestAnimationFrame(() => {
+          img.classList.add('loaded');
+        });
       });
     }
   });
