@@ -64,19 +64,22 @@ export const GET: APIRoute = async ({ url }) => {
         });
       }
       if (row.photo_url) {
+        const stack = stackMap.get(row.id);
+        const isFirst = stack.images.length === 0;
+        
         if (sortMode === 'personal' && ownerFilter) {
-          stackMap.get(row.id).images.push({
+          stack.images.push({
             url: row.photo_url,
             thumbnail_url: row.thumbnail_url,
-            lqip: row.lqip,
+            lqip: isFirst ? row.lqip : undefined,
             photoId: row.photo_id,
             expandedSortOrder: row.expanded_sort_order,
           });
         } else {
-          stackMap.get(row.id).images.push({
+          stack.images.push({
             url: row.photo_url,
             thumbnail_url: row.thumbnail_url,
-            lqip: row.lqip,
+            lqip: isFirst ? row.lqip : undefined,
           });
         }
       }
