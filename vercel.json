@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/stock",
+      "destination": "https://stock-view-three.vercel.app/stock"
+    },
+    {
+      "source": "/stock/:path*",
+      "destination": "https://stock-view-three.vercel.app/stock/:path*"
+    }
+  ]
+}
