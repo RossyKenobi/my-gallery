@@ -29,6 +29,18 @@ export function initClerkTextObserver() {
         }
       }
 
+      const text = el.textContent?.trim();
+      if (text && text.includes('Secured by') && text.length < 30) {
+        if (!el.classList.contains('cl-footer')) {
+          el.style.display = 'none';
+        }
+      }
+      
+      // Also hide any clerk links
+      if (el.tagName === 'A' && el.getAttribute('href')?.includes('clerk.com')) {
+        el.style.display = 'none';
+      }
+
       // Style Reset password button
       if ((el.tagName === 'BUTTON' || el.tagName === 'A') && el.textContent?.trim() === 'Reset your password') {
         el.classList.add('custom-reset-btn');
