@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
-import { isAdmin } from '../../lib/auth';
+import { isAdmin, requireRegisteredUser } from '../../lib/auth';
 import { cleanImages } from '../../lib/validate';
 
 export const prerender = false;
@@ -111,11 +111,15 @@ export const PUT: APIRoute = async ({ locals, request, url }) => {
   }
 
   try {
+    const regUser = await requireRegisteredUser(auth.userId);
+    if (!regUser) {
+      return new Response(JSON.stringify({ error: 'Forbidden: registration not finalized' }), { status: 403 });
+    }
     const body = await request.json();
     const scope = url.searchParams.get('scope'); // 'personal' or null (global)
     
     if (Array.isArray(body)) {
-      const adminFlag = await isAdmin(auth.userId);
+      const adminFlag = regUser.is_admin === true;
 
       for (let i = 0; i < body.length; i++) {
         const post = body[i];

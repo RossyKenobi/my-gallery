@@ -22,62 +22,57 @@ async function fetchClerkUsername(clerkId: string): Promise<{ username: string |
 }
 
 /**
- * Sync Clerk users into Postgres (Lazy sync).
- * - If user exists: check and sync username changes (with redirect logging)
- * - If user doesn't exist: create with username
+ * Sync existing registered users with Clerk (Lazy sync).
+ * Never auto-inserts new rows (GA-03): only finalize-registration may create a users row.
  */
-export async function ensureUser(clerkId: string, email?: string) {
+export async function ensureUser(clerkId: string, _email?: string) {
   const existing = await sql`SELECT * FROM users WHERE clerk_id = ${clerkId}`;
 
-  if (existing.length > 0) {
-    const dbUser = existing[0];
-
-    // Fetch latest username from Clerk to check for changes
-    const clerk = await fetchClerkUsername(clerkId);
-
-    if (clerk.username && clerk.username !== dbUser.username) {
-      // Username changed — log redirect from old to new
-      if (dbUser.username) {
-        try {
-          await sql`
-            INSERT INTO username_redirects (old_username, new_username, clerk_id)
-            VALUES (${dbUser.username}, ${clerk.username}, ${clerkId})
-            ON CONFLICT (old_username) DO UPDATE SET new_username = ${clerk.username}
-          `;
-        } catch (e) {
-          console.error('Failed to log username redirect:', e);
-        }
-      }
-
-      // Update the username in users table
-      await sql`UPDATE users SET username = ${clerk.username} WHERE clerk_id = ${clerkId}`;
-      dbUser.username = clerk.username;
-    }
-
-    // Also sync email if changed
-    if (clerk.email && clerk.email !== dbUser.email) {
-      await sql`UPDATE users SET email = ${clerk.email} WHERE clerk_id = ${clerkId}`;
-      dbUser.email = clerk.email;
-    }
-
-    return dbUser;
+  if (existing.length === 0) {
+    return null;
   }
 
-  // --- User does not exist: create ---
+  const dbUser = existing[0];
+
+  // Fetch latest username from Clerk to check for changes
   const clerk = await fetchClerkUsername(clerkId);
-  let finalEmail = email || clerk.email;
-  if (!finalEmail) {
-    finalEmail = `user_${clerkId}@noemail.local`;
+
+  if (clerk.username && clerk.username !== dbUser.username) {
+    // Username changed — log redirect from old to new
+    if (dbUser.username) {
+      try {
+        await sql`
+          INSERT INTO username_redirects (old_username, new_username, clerk_id)
+          VALUES (${dbUser.username}, ${clerk.username}, ${clerkId})
+          ON CONFLICT (old_username) DO UPDATE SET new_username = ${clerk.username}
+        `;
+      } catch (e) {
+        console.error('Failed to log username redirect:', e);
+      }
+    }
+
+    // Update the username in users table
+    await sql`UPDATE users SET username = ${clerk.username} WHERE clerk_id = ${clerkId}`;
+    dbUser.username = clerk.username;
   }
 
-  const inserted = await sql`
-    INSERT INTO users (clerk_id, email, username, is_admin, created_at)
-    VALUES (${clerkId}, ${finalEmail}, ${clerk.username}, false, NOW())
-    ON CONFLICT (clerk_id) DO UPDATE SET email = EXCLUDED.email, username = COALESCE(EXCLUDED.username, users.username)
-    RETURNING *
-  `;
+  // Also sync email if changed
+  if (clerk.email && clerk.email !== dbUser.email) {
+    await sql`UPDATE users SET email = ${clerk.email} WHERE clerk_id = ${clerkId}`;
+    dbUser.email = clerk.email;
+  }
 
-  return inserted[0] || (await sql`SELECT * FROM users WHERE clerk_id = ${clerkId}`)[0];
+  return dbUser;
+}
+
+/**
+ * Look up a registered user row in `users`. Write endpoints must reject Clerk accounts
+ * that have not completed invite finalization (GA-03).
+ */
+export async function requireRegisteredUser(clerkId: string | null | undefined) {
+  if (!clerkId) return null;
+  const rows = await sql`SELECT * FROM users WHERE clerk_id = ${clerkId}`;
+  return rows.length > 0 ? rows[0] : null;
 }
 
 /**

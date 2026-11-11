@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { sql } from '../../../lib/db';
+import { requireRegisteredUser } from '../../../lib/auth';
 
 const BUCKET = 'my-gallery-images';
 
@@ -21,6 +22,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const auth = locals.auth();
   if (!auth?.userId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+  const regUser = await requireRegisteredUser(auth.userId);
+  if (!regUser) {
+    return new Response(JSON.stringify({ error: 'Forbidden: registration not finalized' }), { status: 403 });
   }
 
   try {

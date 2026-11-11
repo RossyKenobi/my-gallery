@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
-import { isAdmin } from '../../../lib/auth';
+import { isAdmin, requireRegisteredUser } from '../../../lib/auth';
 
 export const prerender = false;
 
@@ -16,7 +16,11 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   }
 
   try {
-    const adminFlag = await isAdmin(auth.userId);
+    const regUser = await requireRegisteredUser(auth.userId);
+    if (!regUser) {
+      return new Response(JSON.stringify({ error: 'Forbidden: registration not finalized' }), { status: 403 });
+    }
+    const adminFlag = regUser.is_admin === true;
 
     let result;
     if (adminFlag) {

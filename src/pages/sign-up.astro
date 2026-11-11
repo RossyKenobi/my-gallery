@@ -1,6 +1,5 @@
 ---
 export const prerender = false;
-import { SignUp } from '@clerk/astro/components';
 ---
 <html lang="en">
 <head>
@@ -91,34 +90,17 @@ import { SignUp } from '@clerk/astro/components';
     <div id="error-msg">Invalid Code</div>
   </div>
 
-  <div id="sign-up-container">
-    <SignUp routing="hash" fallbackRedirectUrl="/finalize" appearance={{
-      variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: 'black', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
-      elements: {
-        cardBox: { backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', boxShadow: 'none', borderRadius: '24px' },
-        card: { backgroundColor: 'transparent', border: 'none', boxShadow: 'none' },
-        headerTitle: { color: '#ededed', fontFamily: "'Montserrat', sans-serif", letterSpacing: '0.1em', fontWeight: '400', textTransform: 'uppercase' },
-        headerSubtitle: { display: 'none' },
-        socialButtonsBlockButton: { border: '1px solid rgba(237, 237, 237, 0.2)', borderRadius: '40px', color: '#ededed' },
-        socialButtonsBlockButtonText: { color: '#ededed' },
-        dividerLine: { background: 'rgba(237,237,237,0.1)' },
-        dividerText: { color: 'rgba(237,237,237,0.5)' },
-        formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
-        formFieldInput: { background: 'transparent', border: 'none', borderBottom: '1px solid rgba(237,237,237,0.2)', borderRadius: '0', color: '#ededed', padding: '0.75rem 0', outline: 'none', boxShadow: 'none' },
-        formButtonPrimary: { background: '#ededed', color: 'black', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', border: 'none', padding: '0.75rem 2rem' },
-        footer: { background: 'transparent' },
-        footerActionText: { color: 'rgba(237,237,237,0.5)' },
-        footerActionLink: { color: '#ededed', fontWeight: '500' },
-        identityPreviewText: { color: '#ededed' },
-        identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
-      }
-    }} />
-  </div>
+  <div id="sign-up-container"></div>
 
   <script>
-    document.getElementById('verify-btn').addEventListener('click', async () => {
-      const code = document.getElementById('invite-input').value.trim();
-      const errorMsg = document.getElementById('error-msg');
+    const verifyBtn = document.getElementById('verify-btn');
+    const inviteInput = document.getElementById('invite-input') as HTMLInputElement | null;
+    const errorMsg = document.getElementById('error-msg');
+    const inviteForm = document.getElementById('invite-form');
+    const signUpContainer = document.getElementById('sign-up-container');
+
+    verifyBtn?.addEventListener('click', async () => {
+      const code = inviteInput?.value.trim() || '';
       if (!code) return;
       
       try {
@@ -133,16 +115,45 @@ import { SignUp } from '@clerk/astro/components';
           // Store inviteId for finalize page to consume
           localStorage.setItem('clerk_invite_id', data.inviteId);
           
-          // Hide invite form, show signup
-          document.getElementById('invite-form').style.display = 'none';
-          document.getElementById('sign-up-container').style.display = 'block';
-        } else {
+          // Only mount Clerk SignUp after invite verification succeeds (GA-03)
+          if (inviteForm) inviteForm.style.display = 'none';
+          if (signUpContainer) {
+            signUpContainer.style.display = 'block';
+            (window as any).Clerk?.mountSignUp(signUpContainer, {
+              routing: 'hash',
+              fallbackRedirectUrl: `/finalize?inviteId=${encodeURIComponent(data.inviteId)}`,
+              appearance: {
+                variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: 'black', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
+                elements: {
+                  cardBox: { backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', boxShadow: 'none', borderRadius: '24px' },
+                  card: { backgroundColor: 'transparent', border: 'none', boxShadow: 'none' },
+                  headerTitle: { color: '#ededed', fontFamily: "'Montserrat', sans-serif", letterSpacing: '0.1em', fontWeight: '400', textTransform: 'uppercase' },
+                  headerSubtitle: { display: 'none' },
+                  socialButtonsBlockButton: { border: '1px solid rgba(237, 237, 237, 0.2)', borderRadius: '40px', color: '#ededed' },
+                  socialButtonsBlockButtonText: { color: '#ededed' },
+                  dividerLine: { background: 'rgba(237,237,237,0.1)' },
+                  dividerText: { color: 'rgba(237,237,237,0.5)' },
+                  formFieldLabel: { color: 'rgba(237,237,237,0.7)', fontFamily: "'Montserrat', sans-serif", fontSize: '0.8rem' },
+                  formFieldInput: { background: 'transparent', border: 'none', borderBottom: '1px solid rgba(237,237,237,0.2)', borderRadius: '0', color: '#ededed', padding: '0.75rem 0', outline: 'none', boxShadow: 'none' },
+                  formButtonPrimary: { background: '#ededed', color: 'black', borderRadius: '40px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '500', border: 'none', padding: '0.75rem 2rem' },
+                  footer: { background: 'transparent' },
+                  footerActionText: { color: 'rgba(237,237,237,0.5)' },
+                  footerActionLink: { color: '#ededed', fontWeight: '500' },
+                  identityPreviewText: { color: '#ededed' },
+                  identityPreviewEditButton: { color: 'rgba(237,237,237,0.5)' }
+                }
+              }
+            });
+          }
+        } else if (errorMsg) {
           errorMsg.innerText = data.error || 'Invalid Code';
           errorMsg.classList.add('show');
         }
       } catch (e) {
-        errorMsg.innerText = 'Network error';
-        errorMsg.classList.add('show');
+        if (errorMsg) {
+          errorMsg.innerText = 'Network error';
+          errorMsg.classList.add('show');
+        }
       }
     });
   </script>

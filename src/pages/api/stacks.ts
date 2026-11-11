@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
-import { isAdmin, ensureUser } from '../../lib/auth';
+import { requireRegisteredUser } from '../../lib/auth';
 import { isValidStackId, cleanImages } from '../../lib/validate';
 
 export const prerender = false;
@@ -13,8 +13,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   try {
-    // Ensure user exists in Postgres before inserting stack (Fixes FK error)
-    await ensureUser(auth.userId);
+    const regUser = await requireRegisteredUser(auth.userId);
+    if (!regUser) {
+      return new Response(JSON.stringify({ error: 'Forbidden: registration not finalized' }), { status: 403 });
+    }
 
     const body = await request.json();
     const { id, caption, author, category, isPortrait, hidden, images } = body;
