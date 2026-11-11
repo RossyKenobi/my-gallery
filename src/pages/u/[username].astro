@@ -44,6 +44,9 @@ if (currentUserId) {
 const pageTitle = pageOwner.profile_title || `${username.toUpperCase()}'s Page`;
 const pageSubtitle = pageOwner.profile_subtitle || 'Selected Works';
 const backgroundUrl = pageOwner.background_url || null;
+// Only these two owner fields are needed client-side; never serialise the whole users row (GA-16)
+const ownerClerkId = pageOwner.clerk_id;
+const ownerGalleryExpanded = !!pageOwner.gallery_expanded;
 // Force onboarding for smyfy1@outlook.com (clerk_id: user_3C2G0yGMMV74pCHcVG270RI2IhD)
 const forceOnboarding = isOwner && (pageOwner.clerk_id === 'user_3C2G0yGMMV74pCHcVG270RI2IhD' || pageOwner.email === 'smyfy1@outlook.com');
 const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
@@ -300,17 +303,17 @@ try {
       }
     </style>
 
-    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, pageOwner, showOnboarding, forceOnboarding }}>
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, ownerClerkId, ownerGalleryExpanded, showOnboarding, forceOnboarding }}>
       window.__AUTH__ = {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
       };
       window.__PROFILE__ = {
         isOwner: isOwner,
-        ownerClerkId: pageOwner.clerk_id,
+        ownerClerkId: ownerClerkId,
         showOnboarding: showOnboarding,
         forceOnboarding: forceOnboarding,
-        galleryExpanded: pageOwner.gallery_expanded || false,
+        galleryExpanded: ownerGalleryExpanded,
       };
     </script>
     <script type="application/json" id="initial-gallery-data" set:html={JSON.stringify(initialGalleryData ?? []).replace(/</g, '\\u003c')}></script>
