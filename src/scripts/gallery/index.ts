@@ -1130,18 +1130,33 @@ export function initGallery(config: GalleryConfig) {
       if (state.progressBarInner) state.progressBarInner.style.width = '30%';
 
       try {
+        const failedDeletes: string[] = [];
+        const deleteEach = async (ids: string[], endpoint: string) => {
+          const results = await Promise.all(
+            ids.map(async id => {
+              try {
+                const res = await fetch(`${endpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                return { id, ok: res.ok };
+              } catch {
+                return { id, ok: false };
+              }
+            })
+          );
+          const failed = results.filter(r => !r.ok).map(r => r.id);
+          failedDeletes.push(...failed);
+          return results.filter(r => r.ok).map(r => r.id);
+        };
+
         // 0. Process batch photo deletes (expanded mode)
         if (state.pendingDeletedPhotoIds.length > 0) {
           if (state.progressStatusText) state.progressStatusText.innerText = 'Deleting photos...';
-          await Promise.all(
-            state.pendingDeletedPhotoIds.map(id => fetch(`/api/photos/${id}`, { method: 'DELETE' }))
-          );
-          // Remove deleted photos from allPosts images arrays
+          const deletedPhotoIds = await deleteEach(state.pendingDeletedPhotoIds, '/api/photos');
+          // Remove only the photos the server actually deleted
           for (const post of state.allPosts) {
             if (post.images) {
               post.images = post.images.filter((img: any) => {
-                const pid = typeof img === 'object' ? img.photoId : '';
-                return !state.pendingDeletedPhotoIds.includes(pid);
+                const pid = typeof img === 'object' ? String(img.photoId) : '';
+                return !deletedPhotoIds.includes(pid);
               });
             }
           }
@@ -1153,10 +1168,8 @@ export function initGallery(config: GalleryConfig) {
         // 1. Process batch API stack deletes
         if (state.pendingDeletedStackIds.length > 0) {
           if (state.progressStatusText) state.progressStatusText.innerText = 'Deleting posts...';
-          await Promise.all(
-            state.pendingDeletedStackIds.map(id => fetch(`/api/stacks/${id}`, { method: 'DELETE' }))
-          );
-          state.allPosts = state.allPosts.filter((p: any) => !state.pendingDeletedStackIds.includes(p.id));
+          const deletedStackIds = await deleteEach(state.pendingDeletedStackIds, '/api/stacks');
+          state.allPosts = state.allPosts.filter((p: any) => !deletedStackIds.includes(p.id));
           state.pendingDeletedStackIds = [];
         }
 
@@ -1170,11 +1183,12 @@ export function initGallery(config: GalleryConfig) {
             order: i,
           })).filter(item => item.photoId);
           if (expandedOrder.length > 0) {
-            await fetch(POSTS_API + '?scope=expanded', {
+            const orderRes = await fetch(POSTS_API + '?scope=expanded', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(expandedOrder),
             });
+            if (!orderRes.ok) throw new Error('Failed to save photo order');
             
             // Critical: Update local memory so toggling modes doesn't reset order
             // Use a Map for O(1) matching efficiency and reliability
@@ -1205,7 +1219,13 @@ export function initGallery(config: GalleryConfig) {
         }
         state.hiddenStatusChanged = false;
         if (state.progressBarInner) state.progressBarInner.style.width = '100%';
-        if (state.progressStatusText) state.progressStatusText.innerText = 'Changes saved!';
+        if (failedDeletes.length > 0) {
+          const msg = `${failedDeletes.length} item${failedDeletes.length > 1 ? 's' : ''} could not be deleted`;
+          if (state.progressStatusText) state.progressStatusText.innerText = msg;
+          showSystemToast(msg, true);
+        } else if (state.progressStatusText) {
+          state.progressStatusText.innerText = 'Changes saved!';
+        }
         state.refreshPageBtn?.classList.add('active');
       } catch (e: any) {
         console.error('Save failed:', e);

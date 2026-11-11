@@ -1,20 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { isAdmin } from '../../../lib/auth';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-
-const BUCKET = 'my-gallery-images';
-
-function getS3Client() {
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${import.meta.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: import.meta.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.R2_SECRET_ACCESS_KEY,
-    },
-  });
-}
+import { deleteUnreferencedPhotoObjects } from '../../../lib/r2';
 
 export const prerender = false;
 
@@ -34,7 +21,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
     // Check ownership
     const photo = await sql`
-      SELECT p.id, p.stack_id, p.url FROM photos p
+      SELECT p.id, p.stack_id, p.image_url, p.thumbnail_url FROM photos p
       JOIN stacks s ON s.id = p.stack_id
       WHERE p.id = ${photoId}
       AND (s.owner_clerk_id = ${auth.userId} OR ${adminFlag})
@@ -45,36 +32,21 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     }
 
     const stackId = photo[0].stack_id;
-    const photoUrl = photo[0].url;
 
-    // Delete the photo
+    // Delete the row first; R2 cleanup only touches objects no other row still references.
     await sql`DELETE FROM photos WHERE id = ${photoId}`;
-
-    // Delete from R2
-    try {
-      const urlObj = new URL(photoUrl);
-      const key = urlObj.pathname.substring(1); // removes leading '/'
-      if (key) {
-        const s3 = getS3Client();
-        await s3.send(new DeleteObjectCommand({
-          Bucket: BUCKET,
-          Key: key
-        }));
-      }
-    } catch (e) {
-      console.error('Failed to delete file from R2:', e);
-      // We don't throw here to ensure DB deletion still succeeds if R2 fails
-    }
+    await deleteUnreferencedPhotoObjects([photo[0].image_url, photo[0].thumbnail_url]);
 
     // Check if the stack is now empty
     const remaining = await sql`SELECT count(*) as c FROM photos WHERE stack_id = ${stackId}`;
-    if (parseInt(remaining[0].c) === 0) {
+    const stackDeleted = parseInt(remaining[0].c) === 0;
+    if (stackDeleted) {
       await sql`DELETE FROM stacks WHERE id = ${stackId}`;
     }
 
-    return new Response(JSON.stringify({ success: true, stackDeleted: parseInt(remaining[0].c) === 0 }));
+    return new Response(JSON.stringify({ success: true, stackDeleted }));
   } catch (err: any) {
     console.error('Photo delete error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to delete photo' }), { status: 500 });
   }
 };
