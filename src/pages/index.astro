@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import '../styles/global.css';
+import 'photoswipe/style.css';
 import GalleryShared from '../components/GalleryShared.astro';
 import { getGalleryData } from './api/posts';
 import { ensureUser } from '../lib/auth';
@@ -83,8 +84,6 @@ const ogImageUrl = new URL(siteBackground, Astro.site || Astro.url.origin).href;
     <meta name="theme-color" content="#000000" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- PhotoSwipe CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
     <!-- Mixed Typography: Montserrat (UI) & Cormorant Garamond (Editorial) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

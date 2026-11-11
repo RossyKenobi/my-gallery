@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import '../../styles/global.css';
+import 'photoswipe/style.css';
 import GalleryShared from '../../components/GalleryShared.astro';
 import { getUserByUsername, getRedirect, ensureUser } from '../../lib/auth';
 import { getGalleryData } from '../api/posts';
@@ -8,7 +9,7 @@ import { getGalleryData } from '../api/posts';
 const { username } = Astro.params;
 
 if (!username) {
-  return Astro.redirect('/404', 302);
+  return Astro.rewrite('/404');
 }
 
 const auth = Astro.locals.auth();
@@ -30,7 +31,7 @@ if (!pageOwner) {
   if (newUsername) {
     return Astro.redirect(`/u/${newUsername}`, 301);
   }
-  return Astro.redirect('/404', 302);
+  return Astro.rewrite('/404');
 }
 
 // Step 3: Resolve visitor permissions from dbUser without extra Clerk HTTP roundtrips
@@ -88,7 +89,6 @@ try {
     <meta name="theme-color" content="#000000" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">

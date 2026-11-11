@@ -1,6 +1,8 @@
 import { closeModal } from '../utils/modal';
 export function initClerkTextObserver() {
-  const clerkTextObserver = new MutationObserver(() => {
+  let rafScheduled = false;
+  const runClerkFormatting = () => {
+    rafScheduled = false;
     document.querySelectorAll('[class*="cl-"]').forEach((el: any) => {
       // 1. Text overrides
       if (el.childElementCount === 0) {
@@ -148,6 +150,12 @@ export function initClerkTextObserver() {
         }
       }
     });
+  };
+  const clerkTextObserver = new MutationObserver(() => {
+    if (!rafScheduled) {
+      rafScheduled = true;
+      requestAnimationFrame(runClerkFormatting);
+    }
   });
   clerkTextObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
 }

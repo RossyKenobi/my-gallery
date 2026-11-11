@@ -34,6 +34,6 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
     console.error('Update profile text error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
   }
 };

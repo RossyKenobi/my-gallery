@@ -65,7 +65,10 @@ export async function compressImage(file: Blob, maxDim = MAX_IMAGE_DIMENSION, qu
       );
       URL.revokeObjectURL(img.src);
     };
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    };
     img.src = URL.createObjectURL(file);
   });
 }
@@ -116,7 +119,10 @@ async function generateLQIP(file: Blob): Promise<string> {
       resolve(canvas.toDataURL('image/jpeg', 0.7));
       URL.revokeObjectURL(img.src);
     };
-    img.onerror = () => reject(new Error('Failed to load image for LQIP'));
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image for LQIP'));
+    };
     img.src = URL.createObjectURL(file);
   });
 }

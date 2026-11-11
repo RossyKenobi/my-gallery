@@ -20,6 +20,6 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ success: true }));
   } catch (err: any) {
     console.error('Expanded API error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
   }
 };

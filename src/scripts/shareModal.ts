@@ -14,16 +14,16 @@ if (typeof window !== 'undefined') {
     }
   }) as EventListener);
 
-  // Initialize event listeners once DOM is ready
-  document.addEventListener('DOMContentLoaded', () => {
+  const initShareModal = () => {
     const modal = document.getElementById('share-modal');
-    if (!modal) return;
+    if (!modal || modal.dataset.bound === 'true') return;
+    modal.dataset.bound = 'true';
     
     modal.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.classList.contains('modal-overlay') || target.closest('.close-modal')) {
         modal.classList.remove('active');
-        document.body.style.overflow = '';
+        if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
       }
     });
 
@@ -35,11 +35,11 @@ if (typeof window !== 'undefined') {
         const encodedUrl = encodeURIComponent(currentShareUrl);
         
         if (network === 'x') {
-          window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodedUrl}`, '_blank');
+          window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodedUrl}`, '_blank', 'noopener,noreferrer');
         } else if (network === 'facebook') {
-          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank', 'noopener,noreferrer');
         } else if (network === 'weibo') {
-          window.open(`http://service.weibo.com/share/share.php?url=${encodedUrl}&pic=${encodeURIComponent(currentShareImg)}&title=${text}`, '_blank');
+          window.open(`https://service.weibo.com/share/share.php?url=${encodedUrl}&pic=${encodeURIComponent(currentShareImg)}&title=${text}`, '_blank', 'noopener,noreferrer');
         } else {
           // IG, TikTok, WeChat - Copy link to clipboard
           try {
@@ -58,8 +58,14 @@ if (typeof window !== 'undefined') {
           }
         }
         modal.classList.remove('active');
-        document.body.style.overflow = '';
+        if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
       });
     });
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initShareModal, { once: true });
+  } else {
+    initShareModal();
+  }
 }

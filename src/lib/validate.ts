@@ -63,3 +63,13 @@ export function cleanImages(images: unknown): CleanImage[] | null {
   }
   return out;
 }
+
+export function validateText(val: unknown, maxLen: number, fieldName: string): string {
+  if (typeof val !== 'string') {
+    throw new Error(`${fieldName} must be a string`);
+  }
+  if (val.length > maxLen) {
+    throw new Error(`${fieldName} exceeds maximum length of ${maxLen}`);
+  }
+  return val;
+}

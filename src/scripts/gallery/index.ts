@@ -334,7 +334,7 @@ function createExpandedItemHTML(photo: any): string {
 function renderExpandedGallery() {
   const galleryEl = document.getElementById('gallery');
   if (!galleryEl) return;
-  state.expandedPhotos = buildExpandedPhotos().filter(p => !state.pendingDeletedPhotoIds.includes(p.photoId));
+  state.expandedPhotos = buildExpandedPhotos().filter(p => !state.pendingDeletedPhotoIds.includes(String(p.photoId)));
 
   if (state.expandedPhotos.length === 0) {
     galleryEl.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: rgba(255,255,255,0.3); padding: 4rem 0;">No photos yet.</p>';
@@ -454,7 +454,12 @@ function updateExpandBtn() {
   }
 }
 
+let galleryIntersectionObserver: IntersectionObserver | null = null;
+
 function applyGalleryAnimations(galleryEl: HTMLElement) {
+  if (galleryIntersectionObserver) {
+    galleryIntersectionObserver.disconnect();
+  }
   const observer = new IntersectionObserver((entries) => {
     let delayIndex = 0;
     entries.forEach((entry) => {
@@ -465,6 +470,7 @@ function applyGalleryAnimations(galleryEl: HTMLElement) {
       }
     });
   }, { threshold: 0.1 });
+  galleryIntersectionObserver = observer;
 
   galleryEl.querySelectorAll('.gallery-item-wrapper').forEach(wrapper => {
     observer.observe(wrapper);
@@ -1002,11 +1008,13 @@ async function handleLocalUpload() {
     const { uploadToR2 } = await import('./api');
     if (files[0]) {
       const img = new Image();
-      img.src = URL.createObjectURL(files[0]);
+      const objUrl = URL.createObjectURL(files[0]);
+      img.src = objUrl;
       await new Promise(r => {
         img.onload = r;
         img.onerror = r;
       });
+      URL.revokeObjectURL(objUrl);
       isPortrait = (img.naturalHeight > img.naturalWidth);
     }
 
@@ -1023,11 +1031,13 @@ async function handleLocalUpload() {
         if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
       });
       const img = new Image();
-      img.src = URL.createObjectURL(file);
+      const objUrl = URL.createObjectURL(file);
+      img.src = objUrl;
       await new Promise(r => {
         img.onload = r;
         img.onerror = r;
       });
+      URL.revokeObjectURL(objUrl);
       const fileIsPortrait = (img.naturalHeight > img.naturalWidth);
 
       imageUrls.push({
@@ -1413,6 +1423,9 @@ export function initGallery(config: GalleryConfig) {
     if (state.fileInput) state.fileInput.value = '';
   });
   state.fileInput?.addEventListener('cancel', () => { state.filePickerActive = false; });
+  window.addEventListener('focus', () => {
+    setTimeout(() => { state.filePickerActive = false; }, 300);
+  });
 
   state.addBtn?.addEventListener('click', () => {
     state.pendingAction = 'IMPORT';
