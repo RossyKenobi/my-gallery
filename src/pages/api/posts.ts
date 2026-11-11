@@ -149,9 +149,14 @@ export const PUT: APIRoute = async ({ locals, request, url }) => {
           const canEdit = adminFlag || (await sql`SELECT id FROM stacks WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}`).length > 0;
           
           if (canEdit) {
+            // Normalise first and never wipe a stack's photos if the payload has no usable URLs (GA-08)
+            const images = post.images
+              .map((img: any) => (typeof img === 'string' ? { url: img } : img))
+              .filter((img: any) => img && typeof img.url === 'string' && img.url.length > 0);
+            if (images.length === 0) continue;
             await sql`DELETE FROM photos WHERE stack_id = ${post.id}`;
-            for (let j = 0; j < post.images.length; j++) {
-              const imgObj = typeof post.images[j] === 'string' ? { url: post.images[j] } : post.images[j];
+            for (let j = 0; j < images.length; j++) {
+              const imgObj = images[j];
               await sql`
                 INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, sort_order, created_at)
                 VALUES (${post.id}, ${imgObj.url}, ${imgObj.thumbnail_url || null}, ${imgObj.lqip || null}, ${j}, NOW())

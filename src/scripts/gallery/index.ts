@@ -1418,7 +1418,8 @@ export function initGallery(config: GalleryConfig) {
           const finalUrl = await uploadToR2(blob, fileName, (p) => {
             if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
           });
-          state.currentMiniImages[idx] = finalUrl;
+          // uploadToR2 returns { finalImageUrl, thumbnailUrl, lqip }; the mini gallery stores URL strings
+          state.currentMiniImages[idx] = finalUrl.finalImageUrl;
         }
 
         if (state.progressStatusText) state.progressStatusText.innerText = 'Saving...';
