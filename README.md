@@ -55,8 +55,8 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 ## 📝 Changelog
 
 ### v2.0.0 (Current)
-- **Architecture Decoupling**: Completely refactored the monolithic `gallery.ts` into an isolated, state-driven module system, permanently resolving closure-related UI locks and memory leaks.
-- **Performance & PWA**: Transformed the site into a Progressive Web App (PWA) with Service Worker offline caching. Shifted image compression to a non-blocking `OffscreenCanvas` worker, and added LQIP (Low-Quality Image Placeholders) with smooth fade-in transitions.
+- **Architecture Refactor**: Extracted shared gallery state from `gallery.ts` into a dedicated `state.ts` module to simplify state management across gallery actions.
+- **Image Pipeline & Manifest**: Added multi-tier client-side image compression (`OffscreenCanvas` + `createImageBitmap` with `<canvas>` fallback), LQIP (Low-Quality Image Placeholders) with smooth fade-in transitions, and a Web App Manifest for home-screen installation.
 - **UX & Motion Design**: Introduced staggered `IntersectionObserver` reveal animations for the masonry grid, real-time responsive glassmorphism for navigation menus (resolving deep CSS Backdrop Root clipping bugs), and full `prefers-reduced-motion` accessibility support.
 - **Upload & Management**: Revamped the album builder with drag-and-drop zones, real-time byte-level upload progress bars, and a non-blocking Toast notification system for "Undo Delete" actions.
 - **The "About" Experience**: Injected a 100vh premium "About" section utilizing Cormorant Garamond typography and user-selectable poetic prefaces.
