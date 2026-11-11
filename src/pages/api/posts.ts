@@ -5,102 +5,126 @@ import { isValidStackId } from '../../lib/validate';
 
 export const prerender = false;
 
-export async function getGalleryData(ownerFilter: string | null, sortMode: string | null) {
-  const orderColumn = sortMode === 'personal' ? 'personal_sort_order' : 'sort_order';
-
-  let rows;
-    if (ownerFilter) {
-      rows = await sql`
-        SELECT
-          s.id, s.caption, s.author, s.category,
-          s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
-          u.username AS owner_username,
-          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.expanded_sort_order, p.is_portrait AS photo_is_portrait
-        FROM stacks s
-        LEFT JOIN photos p ON p.stack_id = s.id
-        LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
-        WHERE s.owner_clerk_id = ${ownerFilter}
-        ORDER BY s.sort_order ASC, p.sort_order ASC
-      `;
-    } else {
-      rows = await sql`
-        SELECT
-          s.id, s.caption, s.author, s.category,
-          s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
-          u.username AS owner_username,
-          p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.is_portrait AS photo_is_portrait
-        FROM stacks s
-        LEFT JOIN photos p ON p.stack_id = s.id
-        LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
-        ORDER BY s.sort_order ASC, p.sort_order ASC
-      `;
-    }
-
-    const stackMap = new Map();
-    for (const row of rows) {
-      if (!stackMap.has(row.id)) {
-        stackMap.set(row.id, {
-          id: row.id,
-          caption: row.caption || '',
-          author: row.author || '',
-          category: row.category || '',
-          isPortrait: row.is_portrait,
-          hidden: row.hidden,
-          is_hidden_from_global: row.is_hidden_from_global || false,
-          images: [],
-          owner_clerk_id: row.owner_clerk_id,
-          owner_username: row.owner_username,
-          sort_order: row.sort_order,
-          personal_sort_order: row.personal_sort_order,
-        });
-      }
-      if (row.photo_url) {
-        const stack = stackMap.get(row.id);
-        const isFirst = stack.images.length === 0;
-        
-        if (sortMode === 'personal' && ownerFilter) {
-          stack.images.push({
-            url: row.photo_url,
-            thumbnail_url: row.thumbnail_url,
-            lqip: isFirst ? row.lqip : undefined,
-            photoId: row.photo_id,
-            expandedSortOrder: row.expanded_sort_order,
-            isPortrait: row.photo_is_portrait,
-          });
-        } else {
-          stack.images.push({
-            url: row.photo_url,
-            thumbnail_url: row.thumbnail_url,
-            lqip: isFirst ? row.lqip : undefined,
-            photoId: row.photo_id,
-            isPortrait: row.photo_is_portrait,
-          });
-        }
-      }
-    }
-
-    // Sort by the requested column
-    let results = [...stackMap.values()];
-    if (sortMode === 'personal') {
-      results.sort((a: any, b: any) => (a.personal_sort_order ?? 0) - (b.personal_sort_order ?? 0));
-    }
-
-    return results;
+export interface GalleryQueryOptions {
+  viewerId?: string | null;
+  isAdmin?: boolean;
+  includeGlobalHidden?: boolean;
+  includeHidden?: boolean;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export async function getGalleryData(
+  ownerFilter: string | null,
+  sortMode: string | null,
+  options: GalleryQueryOptions = {}
+) {
+  const viewerId = options.viewerId || null;
+  const adminFlag = Boolean(options.isAdmin);
+  const includeGlobalHidden = options.includeGlobalHidden ?? adminFlag;
+  const includeHidden = options.includeHidden ?? (adminFlag || Boolean(ownerFilter && viewerId === ownerFilter));
+
+  let rows;
+  if (ownerFilter) {
+    rows = await sql`
+      SELECT
+        s.id, s.caption, s.author, s.category,
+        s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
+        u.username AS owner_username,
+        p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.expanded_sort_order, p.is_portrait AS photo_is_portrait
+      FROM stacks s
+      LEFT JOIN photos p ON p.stack_id = s.id
+      LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
+      WHERE s.owner_clerk_id = ${ownerFilter}
+        AND (${includeHidden} OR NOT COALESCE(s.hidden, false))
+      ORDER BY s.sort_order ASC, p.sort_order ASC
+    `;
+  } else {
+    rows = await sql`
+      SELECT
+        s.id, s.caption, s.author, s.category,
+        s.is_portrait, s.hidden, s.is_hidden_from_global, s.sort_order, s.personal_sort_order, s.owner_clerk_id,
+        u.username AS owner_username,
+        p.id AS photo_id, p.image_url AS photo_url, p.thumbnail_url, p.lqip, p.sort_order AS photo_sort_order, p.is_portrait AS photo_is_portrait
+      FROM stacks s
+      LEFT JOIN photos p ON p.stack_id = s.id
+      LEFT JOIN users u ON s.owner_clerk_id = u.clerk_id
+      WHERE (${includeHidden} OR NOT COALESCE(s.hidden, false))
+        AND (${includeGlobalHidden} OR NOT COALESCE(s.is_hidden_from_global, false))
+      ORDER BY s.sort_order ASC, p.sort_order ASC
+    `;
+  }
+
+  const stackMap = new Map();
+  for (const row of rows) {
+    if (!stackMap.has(row.id)) {
+      const canEdit = Boolean(adminFlag || (viewerId && row.owner_clerk_id === viewerId));
+      stackMap.set(row.id, {
+        id: row.id,
+        caption: row.caption || '',
+        author: row.author || '',
+        category: row.category || '',
+        isPortrait: row.is_portrait,
+        hidden: row.hidden,
+        is_hidden_from_global: row.is_hidden_from_global || false,
+        images: [],
+        canEdit,
+        owner_username: row.owner_username,
+        sort_order: row.sort_order,
+        personal_sort_order: row.personal_sort_order,
+      });
+    }
+    if (row.photo_url) {
+      const stack = stackMap.get(row.id);
+      const isFirst = stack.images.length === 0;
+
+      if (sortMode === 'personal' && ownerFilter) {
+        stack.images.push({
+          url: row.photo_url,
+          thumbnail_url: row.thumbnail_url,
+          lqip: isFirst ? row.lqip : undefined,
+          photoId: row.photo_id,
+          expandedSortOrder: row.expanded_sort_order,
+          isPortrait: row.photo_is_portrait,
+        });
+      } else {
+        stack.images.push({
+          url: row.photo_url,
+          thumbnail_url: row.thumbnail_url,
+          lqip: isFirst ? row.lqip : undefined,
+          photoId: row.photo_id,
+          isPortrait: row.photo_is_portrait,
+        });
+      }
+    }
+  }
+
+  // Sort by the requested column
+  let results = [...stackMap.values()];
+  if (sortMode === 'personal') {
+    results.sort((a: any, b: any) => (a.personal_sort_order ?? 0) - (b.personal_sort_order ?? 0));
+  }
+
+  return results;
+}
+
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
     const ownerFilter = url.searchParams.get('owner');
     const sortMode = url.searchParams.get('sort');
+    const auth = locals.auth();
+    const viewerId = auth?.userId || null;
+    const adminFlag = viewerId ? await isAdmin(viewerId) : false;
 
-    const results = await getGalleryData(ownerFilter, sortMode);
+    const results = await getGalleryData(ownerFilter, sortMode, {
+      viewerId,
+      isAdmin: adminFlag,
+    });
 
     return new Response(JSON.stringify(results), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
     console.error('Posts API error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to fetch gallery posts' }), { status: 500 });
   }
 };
 

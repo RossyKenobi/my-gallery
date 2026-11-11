@@ -41,7 +41,10 @@ try {
 
 let initialGalleryData: any[] = [];
 try {
-  initialGalleryData = await getGalleryData(null, null);
+  initialGalleryData = await getGalleryData(null, null, {
+    viewerId: currentUserId,
+    isAdmin: isCurrentUserAdmin,
+  });
 } catch (e) {
   console.error("Failed to fetch initial gallery data", e);
 }

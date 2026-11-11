@@ -51,7 +51,10 @@ const showOnboarding = !backgroundUrl && isOwner;
 
 let initialGalleryData: any[] = [];
 try {
-  initialGalleryData = await getGalleryData(pageOwner.clerk_id, 'personal');
+  initialGalleryData = await getGalleryData(pageOwner.clerk_id, 'personal', {
+    viewerId: currentUserId,
+    isAdmin: isCurrentUserAdmin,
+  });
 } catch (e) {
   console.error("Failed to fetch personal gallery data", e);
 }

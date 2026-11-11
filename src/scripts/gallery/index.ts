@@ -207,10 +207,7 @@ function createGalleryItemHTML(post: any): string {
   }
   const orientationClass = isPortrait === true ? 'is-portrait' : 'is-landscape';
 
-  let canEdit = false;
-  if (state.galleryConfig.userId) {
-    canEdit = state.galleryConfig.isAdmin || post.owner_clerk_id === state.galleryConfig.userId;
-  }
+  const canEdit = Boolean(state.galleryConfig.isAdmin || post.canEdit);
   
   const isHideBtnVisible = state.galleryConfig.mode === 'main' && state.galleryConfig.isAdmin;
   let hideClass = '';
@@ -273,7 +270,7 @@ function buildExpandedPhotos(): any[] {
         caption: post.caption,
         author: post.author,
         owner_username: post.owner_username,
-        owner_clerk_id: post.owner_clerk_id,
+        canEdit: Boolean(state.galleryConfig.isAdmin || post.canEdit),
         isPortrait: typeof img === 'object' && img.isPortrait !== undefined ? img.isPortrait : post.isPortrait,
       });
     }
@@ -291,10 +288,7 @@ function buildExpandedPhotos(): any[] {
 }
 
 function createExpandedItemHTML(photo: any): string {
-  let canEdit = false;
-  if (state.galleryConfig.userId) {
-    canEdit = state.galleryConfig.isAdmin || photo.owner_clerk_id === state.galleryConfig.userId;
-  }
+  const canEdit = Boolean(state.galleryConfig.isAdmin || photo.canEdit);
 
   const deleteBtnHTML = canEdit ? `
     <button class="delete-btn" aria-label="Delete Photo" data-photo-id="${escapeHTML(photo.photoId)}" onclick="event.stopPropagation();">
@@ -579,7 +573,7 @@ function renderMiniGallery() {
   state.miniGalleryGrid.innerHTML = '';
   const postId = state.currentEditingWrapper ? state.currentEditingWrapper.getAttribute('data-id') : null;
   const post = state.allPosts.find((p: any) => p.id === postId);
-  const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
+  const canEdit = Boolean(state.galleryConfig.isAdmin || (post && post.canEdit));
 
   state.currentMiniImages.forEach((item, idx) => {
     const src = getImageUrl(item);
@@ -667,7 +661,7 @@ function openMiniGallery(wrapper: HTMLElement) {
   state.currentEditingWrapper = wrapper;
   const postId = wrapper.getAttribute('data-id');
   const post = state.allPosts.find((p: any) => p.id === postId);
-  const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
+  const canEdit = Boolean(state.galleryConfig.isAdmin || (post && post.canEdit));
 
   if (post && Array.isArray(post.images) && post.images.length > 0) {
     state.currentMiniImages = post.images.map((img: any) =>
@@ -1020,7 +1014,7 @@ async function handleLocalUpload() {
     if (createdData?.db_id) {
       newPost.id = createdData.db_id;
     }
-    newPost.owner_clerk_id = state.galleryConfig.userId;
+    newPost.canEdit = true;
 
     state.allPosts.push(newPost);
     renderGallery();
@@ -1423,7 +1417,7 @@ export function initGallery(config: GalleryConfig) {
     if (!state.currentEditingWrapper) { closeModal(state.miniGalleryModal); return; }
     const postId = state.currentEditingWrapper.getAttribute('data-id');
     const post = state.allPosts.find((p: any) => p.id === postId);
-    const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
+    const canEdit = Boolean(state.galleryConfig.isAdmin || (post && post.canEdit));
 
     if (!canEdit) {
       closeModal(state.miniGalleryModal);
