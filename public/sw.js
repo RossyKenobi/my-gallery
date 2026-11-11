@@ -1,64 +1,17 @@
-const CACHE_NAME = 'silent-flanerie-cache-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/favicon.svg'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
+// Retired service worker (GA-19).
+// The previous worker never installed (it precached a missing /favicon.svg) and,
+// had it installed, would have served stale auth-dependent HTML. This version
+// exists only so that any browser which did register it cleans up after itself.
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
-      );
-    })
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(names.map((name) => caches.delete(name)));
+      await self.registration.unregister();
+    })()
   );
-});
-
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // Stale-while-revalidate for static assets and page navigations
-  if (event.request.mode === 'navigate' || STATIC_ASSETS.includes(url.pathname)) {
-    event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        const fetchPromise = fetch(event.request).then(networkResponse => {
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
-          return networkResponse;
-        }).catch(() => cachedResponse);
-        return cachedResponse || fetchPromise;
-      })
-    );
-    return;
-  }
-
-  // Cache First for Cloudflare R2 images and external fonts
-  if ((url.hostname.includes('pub-') && url.hostname.includes('r2.dev')) || url.hostname.includes('fonts.')) {
-    event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then(networkResponse => {
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
-          return networkResponse;
-        }).catch(() => new Response('', { status: 404 })); // offline fallback
-      })
-    );
-    return;
-  }
-
-  // Network First for API calls
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });

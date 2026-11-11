@@ -321,14 +321,8 @@ try {
       import { initUserMenu, initNavigationInterception, initClerkTextObserver, initClerkSignInAndInvite } from '../../scripts/clerk-auth/index';
       import { initHeroScroll } from '../../scripts/hero-scroll';
 
-      // Register Service Worker for PWA / Offline Gallery
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.error('SW registration failed:', err);
-          });
-        });
-      }
+      // Service worker retired (GA-19): clean up any lingering registration.
+      navigator.serviceWorker?.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
 
       const AUTH = (window as any).__AUTH__ || {};
       const PROFILE = (window as any).__PROFILE__ || {};
