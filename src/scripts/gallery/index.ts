@@ -1540,9 +1540,18 @@ export function initGallery(config: GalleryConfig) {
   document.addEventListener('keydown', (e) => {
     // Esc closes any active custom modal
     if (e.key === 'Escape') {
-      const activeOverlay = document.querySelector('.modal-overlay.active');
-      if (activeOverlay) {
-        closeModal(activeOverlay.id);
+      // Close the top-most modal, routing through each modal's own cancel path where one exists
+      const overlays = document.querySelectorAll<HTMLElement>('.modal-overlay.active');
+      const top = overlays[overlays.length - 1];
+      if (top && top.id !== 'progress-modal') {
+        const cancelButtons: Record<string, string> = {
+          'mini-gallery-modal': 'close-mini-gallery', // keeps the "discard changes?" confirmation
+          'invite-modal': 'cancel-invite-btn', // also clears #invite from the URL
+          'custom-signup-modal': 'close-signup-btn',
+        };
+        const cancelBtn = cancelButtons[top.id] ? document.getElementById(cancelButtons[top.id]) : null;
+        if (cancelBtn) cancelBtn.click();
+        else closeModal(top);
       }
     }
 
