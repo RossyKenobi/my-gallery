@@ -6,8 +6,10 @@ export default defineConfig({
   site: 'https://penumbrae.uk',
   output: 'hybrid',
   adapter: vercel(),
+  // Note: CSRF Origin validation for state-changing methods (POST/PUT/PATCH/DELETE)
+  // is enforced in src/middleware.ts so HEAD/OPTIONS requests aren't blocked by Astro 4's createOriginCheckMiddleware bug.
   security: {
-    checkOrigin: true,
+    checkOrigin: false,
   },
   integrations: [clerk()],
   vite: {
