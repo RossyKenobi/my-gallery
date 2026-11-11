@@ -4,21 +4,25 @@
  * Usage:
  *   node --env-file=.env.local scripts/backfill-thumbnails.mjs [--dry-run]
  */
+import dotenv from 'dotenv';
 import { neon } from '@neondatabase/serverless';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
 
+dotenv.config({ path: '.env.local' });
+dotenv.config();
+
 const isDryRun = process.argv.includes('--dry-run');
 
-const DATABASE_URL = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET = process.env.R2_BUCKET_NAME || 'penumbrae-storage';
+const R2_BUCKET = process.env.R2_BUCKET_NAME || 'my-gallery-images';
 
 if (!DATABASE_URL) {
-  console.error('Missing DATABASE_URL environment variable.');
+  console.error('Missing POSTGRES_URL (or DATABASE_URL) environment variable.');
   process.exit(1);
 }
 if (!isDryRun && (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY)) {

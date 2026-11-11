@@ -627,6 +627,11 @@ body.is-editing .sortable-ghost .gallery-item {
 }
 
 /* PhotoSwipe Overrides */
+.pswp__bg {
+  background: rgba(6, 6, 6, 0.92) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
 .pswp__button {
   color: #ffffff !important;
 }
@@ -902,19 +907,19 @@ body.is-editing .sortable-ghost .gallery-item {
   /* Synchronize divider widths exactly when Grid transitions to 1-column array padding */
   body .hero-divider,
   .gallery-divider:not(.hero-divider) {
-    width: calc(100% - 6rem) !important;
+    width: calc(100% - 2rem) !important;
   }
   
   .gallery-grid {
-    padding: 2rem 3rem 1.5rem; /* Set bottom padding to exactly equal bottom bar padding for Edit button vertical symmetry */
+    padding: 2rem 1rem 1.5rem; /* Set bottom padding to exactly equal bottom bar padding for Edit button vertical symmetry */
     column-gap: 1.5rem;
     row-gap: 1.35rem; /* Exactly matched to the 13.5% ratio of desktop gap-to-horizontal-photo-height */
   }
   .gallery-bottom-bar {
-    padding: 0 3rem !important; /* Clean horizontal scaling: 3rem strictly binds it to the 640px layout without breaking vertical flex-centering */
+    padding: 0 1rem !important; /* Clean horizontal scaling: 1rem strictly binds it to the 640px layout without breaking vertical flex-centering */
   }
   .import-trigger-wrapper {
-    padding: 0 3rem 3rem; /* Same alignment here */
+    padding: 0 1rem 3rem; /* Same alignment here */
   }
   .contact-section {
     padding: 3rem 1.5rem 4rem;

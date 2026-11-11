@@ -49,12 +49,14 @@ settingsRows.forEach((r: any) => {
   if (r.key === 'site_about') siteAbout = r.value;
 });
 const ogImageUrl = new URL(siteBackground, Astro.site || Astro.url.origin).href;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site || Astro.url.origin).href;
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalUrl} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{siteTitle} | The Gallery</title>
@@ -62,6 +64,7 @@ const ogImageUrl = new URL(siteBackground, Astro.site || Astro.url.origin).href;
     <meta property="og:title" content={`${siteTitle} | The Gallery`} />
     <meta property="og:description" content={siteSubtitle} />
     <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${siteTitle} | The Gallery`} />
@@ -87,7 +90,7 @@ const ogImageUrl = new URL(siteBackground, Astro.site || Astro.url.origin).href;
     <!-- Mixed Typography: Montserrat (UI) & Cormorant Garamond (Editorial) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
     <!-- Transparent Minimalist Navigation -->
@@ -181,7 +184,7 @@ const ogImageUrl = new URL(siteBackground, Astro.site || Astro.url.origin).href;
     </section>
     
     <footer style="padding: 2rem 0 1rem; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; letter-spacing: 0.1rem;">
-      &copy; 2026 THE GALLERY BY F.Y. | v2.0.0
+      &copy; 2026 THE GALLERY BY F.Y. | v2.1.0
     </footer>
 
     <!-- Background Upload Modal (Admin only) -->

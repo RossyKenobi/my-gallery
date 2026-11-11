@@ -54,7 +54,10 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 
 ## 📝 Changelog
 
-### v2.0.0 (Current)
+### v2.1.0 (Current)
+- **Security & Stability Fixes**: Comprehensive security hardening, transactional album & R2 storage lifecycle updates, SSR query parallelization, on-demand bundle splitting, lightbox deep-linking, and accessibility/SEO improvements.
+
+### v2.0.0
 - **Architecture Refactor**: Extracted shared gallery state from `gallery.ts` into a dedicated `state.ts` module to simplify state management across gallery actions.
 - **Image Pipeline & Manifest**: Added multi-tier client-side image compression (`OffscreenCanvas` + `createImageBitmap` with `<canvas>` fallback), LQIP (Low-Quality Image Placeholders) with smooth fade-in transitions, and a Web App Manifest for home-screen installation.
 - **UX & Motion Design**: Introduced staggered `IntersectionObserver` reveal animations for the masonry grid, real-time responsive glassmorphism for navigation menus (resolving deep CSS Backdrop Root clipping bugs), and full `prefers-reduced-motion` accessibility support.
@@ -105,4 +108,3 @@ The portfolio follows a **Minimalist Luxury** aesthetic:
 > - `POSTGRES_URL` — Neon database connection string
 > - `CLERK_SECRET_KEY` / `PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk auth keys
 > - `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` — Cloudflare R2 credentials
-> - `R2_PUBLIC_DOMAIN` — CDN domain for assets (e.g. `img.penumbrae.uk`)
