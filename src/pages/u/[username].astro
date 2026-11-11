@@ -46,6 +46,7 @@ const backgroundUrl = pageOwner.background_url || null;
 const ownerClerkId = pageOwner.clerk_id;
 const ownerGalleryExpanded = !!pageOwner.gallery_expanded;
 const showOnboarding = !backgroundUrl && isOwner;
+const ogImageUrl = new URL(backgroundUrl || '/images/hero_background.jpg', Astro.site || Astro.url.origin).href;
 
 let initialGalleryData: any[] = [];
 try {
@@ -67,25 +68,25 @@ try {
     <meta name="description" content={pageSubtitle} />
     <meta property="og:title" content={`${pageTitle} | The Gallery`} />
     <meta property="og:description" content={pageSubtitle} />
-    <meta property="og:image" content={backgroundUrl || '/images/hero_background.jpg'} />
+    <meta property="og:image" content={ogImageUrl} />
     <meta property="og:type" content="profile" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${pageTitle} | The Gallery`} />
     <meta name="twitter:description" content={pageSubtitle} />
-    <meta name="twitter:image" content={backgroundUrl || '/images/hero_background.jpg'} />
+    <meta name="twitter:image" content={ogImageUrl} />
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Person",
       "name": pageTitle,
       "description": pageSubtitle,
-      "image": backgroundUrl || '/images/hero_background.jpg',
+      "image": ogImageUrl,
       "url": Astro.url.href
     })} />
     
     <!-- PWA / Offline Support -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#000000" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -3,6 +3,7 @@ import vercel from '@astrojs/vercel/serverless';
 import clerk from '@clerk/astro';
 
 export default defineConfig({
+  site: 'https://penumbrae.uk',
   output: 'hybrid',
   adapter: vercel(),
   security: {
