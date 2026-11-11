@@ -2,12 +2,13 @@
   "name": "instagram-portfolio-astro",
   "version": "2.1.0",
   "engines": {
-    "node": "20.x"
+    "node": "26.x"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-vercel-runtime.mjs",
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "rm -rf .astro node_modules/.vite && astro build",
+    "build": "node scripts/patch-vercel-runtime.mjs && rm -rf .astro node_modules/.vite && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
