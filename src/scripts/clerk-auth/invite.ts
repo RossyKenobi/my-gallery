@@ -10,9 +10,14 @@ export function initClerkSignInAndInvite() {
 
   document.getElementById('custom-login-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
+    const mountEl = document.getElementById('clerk-signin-mount');
+    if (!signinModal || !mountEl) {
+      (window as any).Clerk?.openSignIn?.();
+      return;
+    }
     openModal(signinModal);
     if ((window as any).Clerk) {
-      (window as any).Clerk.mountSignIn(document.getElementById('clerk-signin-mount'), {
+      (window as any).Clerk.mountSignIn(mountEl, {
         signUpUrl: window.location.origin + '/#invite',
         transferable: false,
         routerPush: (to: string) => {

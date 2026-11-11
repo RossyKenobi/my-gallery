@@ -148,8 +148,8 @@ try {
     <GalleryShared 
       isAuthenticated={!!currentUserId} 
       showEditControls={isOwner || isCurrentUserAdmin} 
-      showInviteModal={false} 
-      showClerkModals={false} 
+      showInviteModal={!currentUserId} 
+      showClerkModals={!currentUserId} 
       showChangeBgBtn={isOwner}
       showExpandBtn={true}
       alwaysShowBar={true}
