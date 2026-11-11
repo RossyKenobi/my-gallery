@@ -1097,16 +1097,19 @@ body.is-editing .sortable-ghost .gallery-item {
   padding: 1.25rem 1.25rem;
   gap: 1.25rem;
   opacity: 0;
+  visibility: hidden;
   transform: translateY(-10px);
   pointer-events: none;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s linear, backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s linear, backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear, visibility 0s linear 0.3s;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 .mobile-menu-overlay.active {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s linear, backdrop-filter 0.1s linear, -webkit-backdrop-filter 0.1s linear, visibility 0s;
 }
 .mobile-menu-overlay .nav-link,
 .mobile-menu-overlay .user-menu-item {
