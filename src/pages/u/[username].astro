@@ -2,7 +2,7 @@
 export const prerender = false;
 import '../../styles/global.css';
 import GalleryShared from '../../components/GalleryShared.astro';
-import { getUserByUsername, getRedirect, isAdmin, ensureUser } from '../../lib/auth';
+import { getUserByUsername, getRedirect, ensureUser } from '../../lib/auth';
 import { getGalleryData } from '../api/posts';
 
 const { username } = Astro.params;
@@ -11,10 +11,20 @@ if (!username) {
   return Astro.redirect('/404', 302);
 }
 
-// Step 1: Look up user by username
-let pageOwner = await getUserByUsername(username);
+const auth = Astro.locals.auth();
+const currentUserId = auth?.userId || null;
 
-// Step 2: If not found, check redirects
+// Step 1: Look up page owner and current visitor concurrently (GA-18)
+let [pageOwner, dbUser] = await Promise.all([
+  getUserByUsername(username),
+  currentUserId ? ensureUser(currentUserId) : Promise.resolve(null),
+]);
+
+// Step 2: If not found, sync current user with Clerk on-demand in case they just renamed, then check redirects
+if (!pageOwner && currentUserId) {
+  dbUser = await ensureUser(currentUserId, { syncClerk: true });
+  pageOwner = await getUserByUsername(username);
+}
 if (!pageOwner) {
   const newUsername = await getRedirect(username);
   if (newUsername) {
@@ -23,23 +33,11 @@ if (!pageOwner) {
   return Astro.redirect('/404', 302);
 }
 
-// Step 3: Get current visitor's auth
-const auth = Astro.locals.auth();
-const currentUserId = auth?.userId || null;
+// Step 3: Resolve visitor permissions from dbUser without extra Clerk HTTP roundtrips
 const isOwner = currentUserId === pageOwner.clerk_id;
-
-let isCurrentUserAdmin = false;
-let currentUsername = '';
-let currentUsernameLower = '';
-if (currentUserId) {
-  isCurrentUserAdmin = await isAdmin(currentUserId);
-  const dbUser = await ensureUser(currentUserId);
-  currentUsernameLower = dbUser?.username || '';
-  try {
-    const user = await Astro.locals.currentUser();
-    currentUsername = (user?.username || user?.firstName || 'User').toUpperCase();
-  } catch { currentUsername = 'USER'; }
-}
+const isCurrentUserAdmin = Boolean(dbUser?.is_admin);
+const currentUsernameLower = dbUser?.username || '';
+const currentUsername = currentUserId ? (dbUser?.username || 'USER').toUpperCase() : '';
 
 const pageTitle = pageOwner.profile_title || `${username.toUpperCase()}'s Page`;
 const pageSubtitle = pageOwner.profile_subtitle || 'Selected Works';
@@ -304,10 +302,11 @@ try {
       }
     </style>
 
-    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, ownerClerkId, ownerGalleryExpanded, showOnboarding }}>
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, currentUsernameLower, isOwner, ownerClerkId, ownerGalleryExpanded, showOnboarding }}>
       window.__AUTH__ = {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
+        username: currentUsernameLower,
       };
       window.__PROFILE__ = {
         isOwner: isOwner,

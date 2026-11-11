@@ -3,6 +3,8 @@ export const prerender = false;
 import '../styles/global.css';
 import GalleryShared from '../components/GalleryShared.astro';
 import { getGalleryData } from './api/posts';
+import { ensureUser } from '../lib/auth';
+import { sql } from '../lib/db';
 
 const auth = Astro.locals.auth();
 const currentUserId = auth?.userId || null;
@@ -10,44 +12,41 @@ const currentUserId = auth?.userId || null;
 let isCurrentUserAdmin = false;
 let currentUsername = '';
 let currentUsernameLower = '';
-if (currentUserId) {
-  const { isAdmin, ensureUser } = await import('../lib/auth');
-  isCurrentUserAdmin = await isAdmin(currentUserId);
-  // Sync user data (including username) on every page load
-  const dbUser = await ensureUser(currentUserId);
-  currentUsernameLower = dbUser?.username || '';
-  try {
-    const user = await Astro.locals.currentUser();
-    currentUsername = (user?.username || user?.firstName || 'User').toUpperCase();
-  } catch { currentUsername = 'USER'; }
-}
-
 let siteTitle = 'Silent Flânerie';
 let siteSubtitle = 'Unscripted drifts through the quotidian.';
 let siteBackground = '/images/hero_background.jpg';
 let siteAbout = 'For the perfect flâneur, for the passionate spectator, it is an immense joy to set up house in the heart of the multitude, amid the ebb and flow of movement, in the midst of the fugitive and the infinite. — Charles Baudelaire';
-try {
-  const { sql } = await import('../lib/db');
-  const rows = await sql`SELECT key, value FROM site_settings WHERE key IN ('site_title', 'site_subtitle', 'site_background', 'site_about')`;
-  rows.forEach(r => {
-    if (r.key === 'site_title') siteTitle = r.value;
-    if (r.key === 'site_subtitle') siteSubtitle = r.value;
-    if (r.key === 'site_background') siteBackground = r.value;
-    if (r.key === 'site_about') siteAbout = r.value;
-  });
-} catch (e) {
-  // DB not migrated yet
-}
-
 let initialGalleryData: any[] = [];
-try {
-  initialGalleryData = await getGalleryData(null, null, {
-    viewerId: currentUserId,
-    isAdmin: isCurrentUserAdmin,
-  });
-} catch (e) {
-  console.error("Failed to fetch initial gallery data", e);
-}
+
+const siteSettingsPromise = sql`
+  SELECT key, value FROM site_settings
+  WHERE key IN ('site_title', 'site_subtitle', 'site_background', 'site_about')
+`.catch(() => [] as any[]);
+
+const userAndGalleryPromise = (async () => {
+  if (currentUserId) {
+    const dbUser = await ensureUser(currentUserId);
+    isCurrentUserAdmin = Boolean(dbUser?.is_admin);
+    currentUsernameLower = dbUser?.username || '';
+    currentUsername = (dbUser?.username || 'USER').toUpperCase();
+  }
+  try {
+    initialGalleryData = await getGalleryData(null, null, {
+      viewerId: currentUserId,
+      isAdmin: isCurrentUserAdmin,
+    });
+  } catch (e) {
+    console.error("Failed to fetch initial gallery data", e);
+  }
+})();
+
+const [settingsRows] = await Promise.all([siteSettingsPromise, userAndGalleryPromise]);
+settingsRows.forEach((r: any) => {
+  if (r.key === 'site_title') siteTitle = r.value;
+  if (r.key === 'site_subtitle') siteSubtitle = r.value;
+  if (r.key === 'site_background') siteBackground = r.value;
+  if (r.key === 'site_about') siteAbout = r.value;
+});
 ---
 
 <html lang="en">
@@ -300,10 +299,11 @@ try {
       }
     </style>
 
-    <script define:vars={{ currentUserId, isCurrentUserAdmin }}>
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, currentUsernameLower }}>
       window.__AUTH__ = {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
+        username: currentUsernameLower,
       };
     </script>
     <script type="application/json" id="initial-gallery-data" set:html={JSON.stringify(initialGalleryData ?? []).replace(/</g, '\\u003c')}></script>

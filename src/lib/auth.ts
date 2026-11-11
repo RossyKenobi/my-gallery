@@ -22,10 +22,11 @@ async function fetchClerkUsername(clerkId: string): Promise<{ username: string |
 }
 
 /**
- * Sync existing registered users with Clerk (Lazy sync).
+ * Fetch the registered user row from Postgres and optionally sync with Clerk API
+ * only when username/email is missing or `syncClerk` is explicitly requested (GA-18).
  * Never auto-inserts new rows (GA-03): only finalize-registration may create a users row.
  */
-export async function ensureUser(clerkId: string, _email?: string) {
+export async function ensureUser(clerkId: string, options?: { syncClerk?: boolean }) {
   const existing = await sql`SELECT * FROM users WHERE clerk_id = ${clerkId}`;
 
   if (existing.length === 0) {
@@ -34,7 +35,12 @@ export async function ensureUser(clerkId: string, _email?: string) {
 
   const dbUser = existing[0];
 
-  // Fetch latest username from Clerk to check for changes
+  const needsClerkSync = Boolean(options?.syncClerk || !dbUser.username || !dbUser.email);
+  if (!needsClerkSync) {
+    return dbUser;
+  }
+
+  // Fetch latest username from Clerk when missing or explicitly requested
   const clerk = await fetchClerkUsername(clerkId);
 
   if (clerk.username && clerk.username !== dbUser.username) {
