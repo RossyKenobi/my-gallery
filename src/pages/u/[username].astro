@@ -338,7 +338,7 @@ try {
         userId: AUTH.userId || null,
         isAdmin: AUTH.isAdmin || false,
         ownerClerkId: PROFILE.ownerClerkId,
-        canSort: PROFILE.isOwner || AUTH.isAdmin,
+        canSort: PROFILE.isOwner || false,
         postsApiUrl: `/api/posts?owner=${PROFILE.ownerClerkId}&sort=personal`,
         saveScope: 'personal',
         isOwner: PROFILE.isOwner || false,
