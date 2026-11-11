@@ -5,6 +5,9 @@ import clerk from '@clerk/astro';
 export default defineConfig({
   output: 'hybrid',
   adapter: vercel(),
+  security: {
+    checkOrigin: true,
+  },
   integrations: [clerk()],
   vite: {
     ssr: {
