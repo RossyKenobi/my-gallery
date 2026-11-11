@@ -43,6 +43,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       Key: key,
       Body: inspectedMain.buffer,
       ContentType: inspectedMain.contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
     }));
 
     const finalImageUrl = `https://img.penumbrae.uk/${key}`;
@@ -61,6 +62,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         Key: thumbKey,
         Body: inspectedThumb.buffer,
         ContentType: inspectedThumb.contentType,
+        CacheControl: 'public, max-age=31536000, immutable',
       }));
       thumbnailUrl = `https://img.penumbrae.uk/${thumbKey}`;
     }

@@ -386,7 +386,7 @@ function attachExpandedListeners() {
       }
       e.preventDefault();
       if (document.body.classList.contains('is-swiping')) return;
-      const src = wrapper.querySelector('img')?.src;
+      const src = wrapper.querySelector('.gallery-item')?.getAttribute('data-pswp-src') || wrapper.querySelector('img')?.src;
       if (!src) return;
 
       const pswp = new PhotoSwipe({

@@ -40,6 +40,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       Key: key,
       Body: inspected.buffer,
       ContentType: inspected.contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
     }));
 
     const backgroundUrl = `https://img.penumbrae.uk/${key}`;
