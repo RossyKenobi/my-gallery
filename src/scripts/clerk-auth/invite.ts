@@ -182,7 +182,7 @@ export function initClerkSignInAndInvite() {
             openModal(signupModal);
 
             (window as any).Clerk.mountSignUp(document.getElementById('clerk-signup-mount'), {
-              fallbackRedirectUrl: `/finalize?inviteId=${data.inviteId}`,
+              fallbackRedirectUrl: `/finalize?inviteId=${encodeURIComponent(data.inviteId)}`,
               appearance: {
                 variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: 'black', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
                 elements: {
@@ -214,7 +214,7 @@ export function initClerkSignInAndInvite() {
                     await fetch('/api/finalize-registration', {
                       method: 'POST',
                       headers: {'Content-Type': 'application/json'},
-                      body: JSON.stringify({ inviteId: parseInt(storedInviteId) })
+                      body: JSON.stringify({ inviteId: storedInviteId })
                     });
                     localStorage.removeItem('clerk_invite_id');
                   } catch (fe) {

@@ -1,29 +1,37 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
+import { isRateLimited } from '../../lib/rateLimit';
+import { verifyInviteToken } from '../../lib/inviteToken';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   const auth = locals.auth();
   if (!auth?.userId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
 
+  const ip = (clientAddress || request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim();
+  if (await isRateLimited(`finalize:${auth.userId}:${ip}`, 5, 60)) {
+    return new Response(JSON.stringify({ error: 'Too many attempts. Try again later.' }), { status: 429 });
+  }
+
   try {
     const { inviteId } = await request.json();
+    const verifiedRowId = verifyInviteToken(inviteId);
 
-    if (!inviteId) {
+    if (!verifiedRowId) {
       await fetch(`https://api.clerk.com/v1/users/${auth.userId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${import.meta.env.CLERK_SECRET_KEY}` }
       });
-      return new Response(JSON.stringify({ error: 'Invite ID required. Account deleted.' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'Valid invite token required. Account deleted.' }), { status: 400 });
     }
 
     const consumeRes = await sql`
       UPDATE invitation_codes
       SET is_used = true, used_by_clerk_id = ${auth.userId}, used_at = NOW()
-      WHERE id = ${inviteId} AND is_used = false
+      WHERE id = ${verifiedRowId} AND is_used = false
       RETURNING code
     `;
 
