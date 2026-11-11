@@ -95,7 +95,7 @@ function renderLocalPreviewGrid() {
       imgObj.src = item.dataUrl;
 
       div.innerHTML = `
-        <img src="${item.dataUrl}" alt="preview ${idx}" style="pointer-events: none;" />
+        <img src="${escapeHTML(safeUrl(item.dataUrl))}" alt="preview ${idx}" style="pointer-events: none;" />
         <button class="mini-delete-btn" data-idx="${idx}">×</button>
       `;
       localPreviewGrid.appendChild(div);
@@ -174,15 +174,28 @@ function escapeHTML(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// Only allow URLs we can safely drop into src/href attributes: https, site-relative, or image data URLs
+function safeUrl(url: string): string {
+  if (!url) return '';
+  const u = String(url).trim();
+  if (/^https:\/\//i.test(u) || /^\/(?!\/)/.test(u) || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u)) return u;
+  return '';
+}
+
+// LQIP goes inside a CSS url('...') in a style attribute, so accept nothing but a plain base64 image data URL
+function safeLqip(lqip: string): string {
+  return lqip && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(lqip) ? lqip : '';
+}
+
 // --- Gallery Rendering ---
 function createGalleryItemHTML(post: any): string {
   const images = post.images || [];
   const imageUrls = images.map(getImageUrl);
   const isCarousel = imageUrls.length > 1;
   const firstImage = images.length > 0 ? images[0] : null;
-  const mainUrl = getImageUrl(firstImage);
-  const thumbnail = firstImage && typeof firstImage === 'object' && firstImage.thumbnail_url ? firstImage.thumbnail_url : mainUrl;
-  const lqip = firstImage && typeof firstImage === 'object' && firstImage.lqip ? firstImage.lqip : '';
+  const mainUrl = safeUrl(getImageUrl(firstImage));
+  const thumbnail = firstImage && typeof firstImage === 'object' && firstImage.thumbnail_url ? safeUrl(firstImage.thumbnail_url) || mainUrl : mainUrl;
+  const lqip = firstImage && typeof firstImage === 'object' && firstImage.lqip ? safeLqip(firstImage.lqip) : '';
   const imagesData = escapeHTML(JSON.stringify(imageUrls));
   const captionData = escapeHTML(post.caption || '');
   const authorData = escapeHTML(post.author || '');
@@ -204,7 +217,7 @@ function createGalleryItemHTML(post: any): string {
   if (isHideBtnVisible && post.is_hidden_from_global) hideClass = 'is-ghosted';
 
   const hideBtnHTML = isHideBtnVisible ? `
-    <button class="hide-btn" aria-label="Toggle Hide" data-id="${post.id}" data-hidden="${post.is_hidden_from_global || false}" onclick="event.stopPropagation();">
+    <button class="hide-btn" aria-label="Toggle Hide" data-id="${escapeHTML(post.id)}" data-hidden="${post.is_hidden_from_global || false}" onclick="event.stopPropagation();">
       <svg viewBox="0 0 24 24">
         ${post.is_hidden_from_global 
           ? '<line x1="5" y1="12" x2="19" y2="12"></line><line x1="12" y1="5" x2="12" y2="19"></line>' 
@@ -214,7 +227,7 @@ function createGalleryItemHTML(post: any): string {
   ` : '';
 
   const deleteBtnHTML = canEdit ? `
-        <button class="delete-btn" aria-label="Delete Post" data-id="${post.id}" onclick="event.stopPropagation();">
+        <button class="delete-btn" aria-label="Delete Post" data-id="${escapeHTML(post.id)}" onclick="event.stopPropagation();">
           <svg viewBox="0 0 24 24">
             <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
             <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -284,7 +297,7 @@ function createExpandedItemHTML(photo: any): string {
   }
 
   const deleteBtnHTML = canEdit ? `
-    <button class="delete-btn" aria-label="Delete Photo" data-photo-id="${photo.photoId}" onclick="event.stopPropagation();">
+    <button class="delete-btn" aria-label="Delete Photo" data-photo-id="${escapeHTML(photo.photoId)}" onclick="event.stopPropagation();">
       <svg viewBox="0 0 24 24">
         <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
         <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -292,16 +305,17 @@ function createExpandedItemHTML(photo: any): string {
       </svg>
     </button>` : '';
 
-  const thumbnail = photo.thumbnail_url || photo.url;
-  const lqip = photo.lqip || '';
+  const photoUrl = safeUrl(photo.url);
+  const thumbnail = safeUrl(photo.thumbnail_url) || photoUrl;
+  const lqip = safeLqip(photo.lqip || '');
   const lqipStyle = lqip ? `background-image: url('${lqip}'); background-size: cover; background-position: center;` : '';
-  const srcset = (thumbnail !== photo.url) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photo.url)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
+  const srcset = (thumbnail !== photoUrl) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photoUrl)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
   
   const orientationClass = photo.isPortrait === true ? 'is-portrait' : 'is-landscape';
 
   return `
     <div class="gallery-item-wrapper ${orientationClass}" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
-      <a href="${escapeHTML(photo.url)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(photo.url)}" style="${lqipStyle}">
+      <a href="${escapeHTML(photoUrl)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(photoUrl)}" style="${lqipStyle}">
         <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
       </a>
@@ -590,7 +604,7 @@ function renderMiniGallery() {
     imgObj.src = src;
 
     div.innerHTML = `
-      <img src="${src}" alt="img ${idx}" draggable="false" style="pointer-events: none;" />
+      <img src="${escapeHTML(safeUrl(src))}" alt="img ${idx}" draggable="false" style="pointer-events: none;" />
       ${canEdit ? `<button class="mini-delete-btn" data-idx="${idx}">×</button>` : ''}
     `;
     state.miniGalleryGrid?.appendChild(div);
@@ -693,19 +707,33 @@ function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: 
           const currentAuthor = wrapper.getAttribute('data-author');
           const currentOwnerUsername = wrapper.getAttribute('data-owner-username');
           const captionStr = defaultCaption !== undefined ? defaultCaption : wrapper.getAttribute('data-caption') || '';
-          let finalCaption = captionStr ? captionStr.replace(/\n/g, '<br>') : '';
-          
           const displayAuthor = (currentAuthor && currentAuthor.trim() !== '') ? currentAuthor.trim() : (currentOwnerUsername ? currentOwnerUsername.trim() : '');
-          
+
+          // Build with text nodes only: caption/author are user content (GA-04)
+          el.replaceChildren();
+          const lines = captionStr ? captionStr.split('\n') : [];
+          lines.forEach((line, i) => {
+            if (i > 0) el.appendChild(document.createElement('br'));
+            el.appendChild(document.createTextNode(line));
+          });
+
           if (displayAuthor) {
-            const upperAuthor = displayAuthor.toUpperCase();
-            if (currentOwnerUsername && currentOwnerUsername.trim() !== '') {
-              finalCaption += `<br>BY <a href="/u/${currentOwnerUsername.trim().toLowerCase()}" style="color: inherit; text-decoration: none;"><b>${upperAuthor}</b></a>`;
+            el.appendChild(document.createElement('br')); // same as before: BY line always starts on a new line
+            el.appendChild(document.createTextNode('BY '));
+            const bold = document.createElement('b');
+            bold.textContent = displayAuthor.toUpperCase();
+            const ownerSlug = currentOwnerUsername ? currentOwnerUsername.trim().toLowerCase() : '';
+            if (ownerSlug) {
+              const link = document.createElement('a');
+              link.href = `/u/${encodeURIComponent(ownerSlug)}`;
+              link.style.color = 'inherit';
+              link.style.textDecoration = 'none';
+              link.appendChild(bold);
+              el.appendChild(link);
             } else {
-              finalCaption += `<br>BY <b>${upperAuthor}</b>`;
+              el.appendChild(bold);
             }
           }
-          el.innerHTML = finalCaption;
         });
       }
     });
@@ -1000,10 +1028,15 @@ async function handleLocalUpload() {
 async function loadGallery() {
   try {
     let data;
-    const win = window as any;
-    if (win.__INITIAL_GALLERY_DATA__) {
-      data = win.__INITIAL_GALLERY_DATA__;
-      win.__INITIAL_GALLERY_DATA__ = null; // consume it so subsequent loads (e.g. after upload) will fetch fresh
+    // SSR payload lives in a JSON script tag (not define:vars) so user content can't close the script (GA-04)
+    const initialEl = document.getElementById('initial-gallery-data');
+    let initialData: any = null;
+    if (initialEl) {
+      try { initialData = JSON.parse(initialEl.textContent || 'null'); } catch { initialData = null; }
+      initialEl.remove(); // consume it so subsequent loads (e.g. after upload) will fetch fresh
+    }
+    if (initialData) {
+      data = initialData;
     } else {
       const res = await fetch(state.galleryConfig.postsApiUrl);
       if (!res.ok) throw new Error('Failed to load gallery data');
@@ -1449,7 +1482,7 @@ export function initGallery(config: GalleryConfig) {
       const thumbContainer = document.getElementById('delete-thumbnails-container');
       if (thumbContainer) {
         thumbContainer.innerHTML = deletedImages.map((img: any) => {
-          const thumbUrl = getImageUrl(img);
+          const thumbUrl = escapeHTML(safeUrl(getImageUrl(img)));
           return `<img src="${thumbUrl}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" />`;
         }).join('');
       }

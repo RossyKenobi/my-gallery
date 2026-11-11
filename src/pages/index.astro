@@ -303,9 +303,7 @@ try {
         isAdmin: isCurrentUserAdmin,
       };
     </script>
-    <script define:vars={{ initialGalleryData }}>
-      window.__INITIAL_GALLERY_DATA__ = initialGalleryData;
-    </script>
+    <script type="application/json" id="initial-gallery-data" set:html={JSON.stringify(initialGalleryData ?? []).replace(/</g, '\\u003c')}></script>
     <script>
       import { initGallery } from '../scripts/gallery/index';
       import { initHeroScroll } from '../scripts/hero-scroll';

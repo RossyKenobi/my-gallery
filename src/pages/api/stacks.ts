@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
 import { isAdmin, ensureUser } from '../../lib/auth';
+import { isValidStackId, cleanImages } from '../../lib/validate';
 
 export const prerender = false;
 
@@ -18,6 +19,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = await request.json();
     const { id, caption, author, category, isPortrait, hidden, images } = body;
 
+    // Validate everything that will be rendered into other visitors' pages (GA-04)
+    if (!isValidStackId(id)) {
+      return new Response(JSON.stringify({ error: 'Invalid album id' }), { status: 400 });
+    }
+    const cleanedImages = images && images.length > 0 ? cleanImages(images) : [];
+    if (!cleanedImages) {
+      return new Response(JSON.stringify({ error: 'Invalid image data' }), { status: 400 });
+    }
+
     // Get current max sort_order
     const maxSort = await sql`SELECT COALESCE(MAX(sort_order), -1) as max_sort FROM stacks`;
     const nextSort = maxSort[0].max_sort + 1;
@@ -29,14 +39,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     `;
 
     // Insert photos if any
-    if (images && images.length > 0) {
-      for (let i = 0; i < images.length; i++) {
-        const imgObj = typeof images[i] === 'string' ? { url: images[i], thumbnail_url: null, lqip: null, isPortrait: null } : images[i];
-        await sql`
-          INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, is_portrait, sort_order, created_at)
-          VALUES (${id}, ${imgObj.url}, ${imgObj.thumbnail_url || null}, ${imgObj.lqip || null}, ${imgObj.isPortrait ?? null}, ${i}, NOW())
-        `;
-      }
+    for (let i = 0; i < cleanedImages.length; i++) {
+      const imgObj = cleanedImages[i];
+      await sql`
+        INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, is_portrait, sort_order, created_at)
+        VALUES (${id}, ${imgObj.url}, ${imgObj.thumbnail_url}, ${imgObj.lqip}, ${imgObj.isPortrait}, ${i}, NOW())
+      `;
     }
 
     return new Response(JSON.stringify({ success: true, db_id: id }), { status: 201 });

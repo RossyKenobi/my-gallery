@@ -313,9 +313,7 @@ try {
         galleryExpanded: pageOwner.gallery_expanded || false,
       };
     </script>
-    <script define:vars={{ initialGalleryData }}>
-      window.__INITIAL_GALLERY_DATA__ = initialGalleryData;
-    </script>
+    <script type="application/json" id="initial-gallery-data" set:html={JSON.stringify(initialGalleryData ?? []).replace(/</g, '\\u003c')}></script>
     <script>
       import { initGallery } from '../../scripts/gallery/index';
       import { initUserMenu, initNavigationInterception, initClerkTextObserver, initClerkSignInAndInvite } from '../../scripts/clerk-auth/index';

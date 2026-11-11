@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
 import { isAdmin } from '../../lib/auth';
+import { cleanImages } from '../../lib/validate';
 
 export const prerender = false;
 
@@ -149,17 +150,18 @@ export const PUT: APIRoute = async ({ locals, request, url }) => {
           const canEdit = adminFlag || (await sql`SELECT id FROM stacks WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}`).length > 0;
           
           if (canEdit) {
-            // Normalise first and never wipe a stack's photos if the payload has no usable URLs (GA-08)
-            const images = post.images
-              .map((img: any) => (typeof img === 'string' ? { url: img } : img))
-              .filter((img: any) => img && typeof img.url === 'string' && img.url.length > 0);
-            if (images.length === 0) continue;
+            // Validate/normalise first; never wipe or partially rewrite a stack on a bad payload (GA-04, GA-08)
+            const images = cleanImages(post.images);
+            if (!images || images.length === 0) {
+              console.warn('Skipping photo rewrite for a stack: invalid image payload');
+              continue;
+            }
             await sql`DELETE FROM photos WHERE stack_id = ${post.id}`;
             for (let j = 0; j < images.length; j++) {
               const imgObj = images[j];
               await sql`
-                INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, sort_order, created_at)
-                VALUES (${post.id}, ${imgObj.url}, ${imgObj.thumbnail_url || null}, ${imgObj.lqip || null}, ${j}, NOW())
+                INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, is_portrait, sort_order, created_at)
+                VALUES (${post.id}, ${imgObj.url}, ${imgObj.thumbnail_url}, ${imgObj.lqip}, ${imgObj.isPortrait}, ${j}, NOW())
               `;
             }
           }
