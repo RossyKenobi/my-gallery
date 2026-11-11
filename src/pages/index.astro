@@ -426,8 +426,6 @@ try {
           if (!bgFileInput?.files?.length) return;
 
           const file = bgFileInput.files[0];
-          const formData = new FormData();
-          formData.append('file', file);
 
           if (bgModal) bgModal.classList.remove('active');
 
@@ -445,6 +443,11 @@ try {
           }
 
           try {
+            const { compressImage } = await import('../scripts/compress');
+            const compressed = await compressImage(file, 2000, 0.85);
+            const formData = new FormData();
+            formData.append('file', new File([compressed], file.name, { type: 'image/jpeg' }));
+
             const res = await fetch('/api/site-background', {
               method: 'POST',
               body: formData,

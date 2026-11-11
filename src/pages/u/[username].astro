@@ -458,13 +458,6 @@ try {
 
           const file = bgFileInput.files[0];
 
-          // Compress image client-side using shared module (OffscreenCanvas when available)
-          const { compressImage } = await import('../../scripts/compress');
-
-          const compressed = await compressImage(file, 2000, 0.85);
-          const formData = new FormData();
-          formData.append('file', new File([compressed], file.name, { type: 'image/jpeg' }));
-
           // Close modal, show progress
           if (bgModal) {
             bgModal.classList.remove('active');
@@ -484,6 +477,12 @@ try {
           }
 
           try {
+            // Compress image inside try block so unsupported formats (e.g. HEIC) are caught cleanly
+            const { compressImage } = await import('../../scripts/compress');
+            const compressed = await compressImage(file, 2000, 0.85);
+            const formData = new FormData();
+            formData.append('file', new File([compressed], file.name, { type: 'image/jpeg' }));
+
             const res = await fetch('/api/user/background', {
               method: 'POST',
               body: formData,

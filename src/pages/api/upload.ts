@@ -1,22 +1,10 @@
 import type { APIRoute } from 'astro';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
 import { requireRegisteredUser } from '../../lib/auth';
-
-const BUCKET = 'my-gallery-images';
+import { getS3Client, inspectUploadedImage, R2_BUCKET } from '../../lib/r2';
 
 export const prerender = false;
-
-function getS3Client() {
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${import.meta.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: import.meta.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.R2_SECRET_ACCESS_KEY,
-    },
-  });
-}
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const auth = locals.auth();
@@ -38,31 +26,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: 'File is required' }), { status: 400 });
     }
 
-    const originalExt = file.name.split('.').pop() || 'jpg';
-    const safeFilename = `${nanoid()}.${originalExt}`;
+    let inspectedMain: Awaited<ReturnType<typeof inspectUploadedImage>>;
+    try {
+      inspectedMain = await inspectUploadedImage(file);
+    } catch (validationErr: any) {
+      return new Response(JSON.stringify({ error: validationErr.message }), { status: 400 });
+    }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const baseId = nanoid();
+    const safeFilename = `${baseId}.${inspectedMain.ext}`;
     const key = `posts/${safeFilename}`;
 
     const s3 = getS3Client();
     await s3.send(new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: R2_BUCKET,
       Key: key,
-      Body: buffer,
-      ContentType: file.type || 'image/jpeg',
+      Body: inspectedMain.buffer,
+      ContentType: inspectedMain.contentType,
     }));
 
     const finalImageUrl = `https://img.penumbrae.uk/${key}`;
     let thumbnailUrl = '';
 
     if (thumbnail && thumbnail instanceof File) {
-      const thumbBuffer = Buffer.from(await thumbnail.arrayBuffer());
-      const thumbKey = `posts/thumb_${safeFilename}`;
+      let inspectedThumb: Awaited<ReturnType<typeof inspectUploadedImage>>;
+      try {
+        inspectedThumb = await inspectUploadedImage(thumbnail);
+      } catch (validationErr: any) {
+        return new Response(JSON.stringify({ error: validationErr.message }), { status: 400 });
+      }
+      const thumbKey = `posts/thumb_${baseId}.${inspectedThumb.ext}`;
       await s3.send(new PutObjectCommand({
-        Bucket: BUCKET,
+        Bucket: R2_BUCKET,
         Key: thumbKey,
-        Body: thumbBuffer,
-        ContentType: thumbnail.type || 'image/jpeg',
+        Body: inspectedThumb.buffer,
+        ContentType: inspectedThumb.contentType,
       }));
       thumbnailUrl = `https://img.penumbrae.uk/${thumbKey}`;
     }
@@ -70,6 +68,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ finalImageUrl, thumbnailUrl, lqip }), { status: 200 });
   } catch (err: any) {
     console.error('Upload error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to upload image' }), { status: 500 });
   }
 };

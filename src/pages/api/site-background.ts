@@ -1,22 +1,10 @@
 import type { APIRoute } from 'astro';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { sql } from '../../lib/db';
 import { isAdmin } from '../../lib/auth';
-
-const BUCKET = 'my-gallery-images';
+import { getS3Client, inspectUploadedImage, R2_BUCKET } from '../../lib/r2';
 
 export const prerender = false;
-
-function getS3Client() {
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${import.meta.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: import.meta.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.R2_SECRET_ACCESS_KEY,
-    },
-  });
-}
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const auth = locals.auth();
@@ -37,21 +25,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: 'File is required' }), { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    let inspected: Awaited<ReturnType<typeof inspectUploadedImage>>;
+    try {
+      inspected = await inspectUploadedImage(file);
+    } catch (validationErr: any) {
+      return new Response(JSON.stringify({ error: validationErr.message }), { status: 400 });
+    }
+
     const timestamp = Date.now();
-    const key = `site-backgrounds/main-${timestamp}.jpg`;
+    const key = `site-backgrounds/main-${timestamp}.${inspected.ext}`;
 
     const s3 = getS3Client();
     await s3.send(new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: R2_BUCKET,
       Key: key,
-      Body: buffer,
-      ContentType: file.type || 'image/jpeg',
+      Body: inspected.buffer,
+      ContentType: inspected.contentType,
     }));
 
     const backgroundUrl = `https://img.penumbrae.uk/${key}`;
 
-    // Update site_background in site_settings
     await sql`
       INSERT INTO site_settings (key, value)
       VALUES ('site_background', ${backgroundUrl})
@@ -61,6 +54,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ url: backgroundUrl }), { status: 200 });
   } catch (err: any) {
     console.error('Site background upload error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to upload site background' }), { status: 500 });
   }
 };

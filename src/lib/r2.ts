@@ -1,9 +1,45 @@
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 import { sql } from './db';
 
 export const R2_BUCKET = 'my-gallery-images';
 export const R2_PUBLIC_HOST = 'img.penumbrae.uk';
+export const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 const DELETABLE_PREFIX = 'posts/';
+
+const ALLOWED_FORMATS: Record<string, { ext: 'jpg' | 'png' | 'webp'; contentType: string }> = {
+  jpeg: { ext: 'jpg', contentType: 'image/jpeg' },
+  png: { ext: 'png', contentType: 'image/png' },
+  webp: { ext: 'webp', contentType: 'image/webp' },
+};
+
+/**
+ * Inspects an uploaded file with sharp to verify it is a genuine JPEG/PNG/WebP under 10MB,
+ * returning the server-determined extension and Content-Type (GA-13).
+ */
+export async function inspectUploadedImage(
+  file: File
+): Promise<{ buffer: Buffer; ext: 'jpg' | 'png' | 'webp'; contentType: string }> {
+  if (file.size === 0 || file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    throw new Error('File size must be between 1B and 10MB');
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (buffer.byteLength === 0 || buffer.byteLength > MAX_IMAGE_UPLOAD_BYTES) {
+    throw new Error('File size must be between 1B and 10MB');
+  }
+  let format: string | undefined;
+  try {
+    const meta = await sharp(buffer).metadata();
+    format = meta.format;
+  } catch {
+    throw new Error('Unsupported or corrupted image file');
+  }
+  const matched = format ? ALLOWED_FORMATS[format] : undefined;
+  if (!matched) {
+    throw new Error('Only JPEG, PNG, and WebP images are allowed');
+  }
+  return { buffer, ext: matched.ext, contentType: matched.contentType };
+}
 
 export function getS3Client() {
   return new S3Client({
