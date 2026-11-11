@@ -47,9 +47,7 @@ const backgroundUrl = pageOwner.background_url || null;
 // Only these two owner fields are needed client-side; never serialise the whole users row (GA-16)
 const ownerClerkId = pageOwner.clerk_id;
 const ownerGalleryExpanded = !!pageOwner.gallery_expanded;
-// Force onboarding for smyfy1@outlook.com (clerk_id: user_3C2G0yGMMV74pCHcVG270RI2IhD)
-const forceOnboarding = isOwner && (pageOwner.clerk_id === 'user_3C2G0yGMMV74pCHcVG270RI2IhD' || pageOwner.email === 'smyfy1@outlook.com');
-const showOnboarding = forceOnboarding || (!backgroundUrl && isOwner);
+const showOnboarding = !backgroundUrl && isOwner;
 
 let initialGalleryData: any[] = [];
 try {
@@ -303,7 +301,7 @@ try {
       }
     </style>
 
-    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, ownerClerkId, ownerGalleryExpanded, showOnboarding, forceOnboarding }}>
+    <script define:vars={{ currentUserId, isCurrentUserAdmin, isOwner, ownerClerkId, ownerGalleryExpanded, showOnboarding }}>
       window.__AUTH__ = {
         userId: currentUserId,
         isAdmin: isCurrentUserAdmin,
@@ -312,7 +310,6 @@ try {
         isOwner: isOwner,
         ownerClerkId: ownerClerkId,
         showOnboarding: showOnboarding,
-        forceOnboarding: forceOnboarding,
         galleryExpanded: ownerGalleryExpanded,
       };
     </script>
@@ -349,7 +346,7 @@ try {
       });
 
       // --- Onboarding Modal ---
-      if (PROFILE.showOnboarding && (PROFILE.forceOnboarding || !localStorage.getItem('skip_bg_setup'))) {
+      if (PROFILE.showOnboarding && !localStorage.getItem('skip_bg_setup')) {
         const onboardingModal = document.getElementById('onboarding-modal');
         if (onboardingModal) {
           onboardingModal.classList.add('active');
