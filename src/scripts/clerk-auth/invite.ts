@@ -148,13 +148,23 @@ export function initClerkSignInAndInvite() {
 
   checkHashForInvite();
 
+  let signupWatchInterval: ReturnType<typeof setInterval> | null = null;
+  function clearSignupWatch() {
+    if (signupWatchInterval !== null) {
+      clearInterval(signupWatchInterval);
+      signupWatchInterval = null;
+    }
+  }
+
   document.getElementById('close-signup-btn')?.addEventListener('click', () => {
+    clearSignupWatch();
     const signupModal = document.getElementById('custom-signup-modal');
     closeModal(signupModal);
     originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
   });
 
   cancelInviteBtn?.addEventListener('click', () => {
+    clearSignupWatch();
     closeModal(inviteModal);
     originalPushState.call(history, '', document.title, window.location.pathname + window.location.search);
   });
@@ -204,19 +214,20 @@ export function initClerkSignInAndInvite() {
               }
             });
 
-            // Poll for auth state change
-            const watchInterval = setInterval(async () => {
+            // Poll for auth state change (single timer, cleaned up on cancel/remount, GA-12)
+            clearSignupWatch();
+            signupWatchInterval = setInterval(async () => {
               if ((window as any).Clerk?.user?.id) {
-                clearInterval(watchInterval);
+                clearSignupWatch();
                 const storedInviteId = localStorage.getItem('clerk_invite_id');
                 if (storedInviteId) {
                   try {
+                    localStorage.removeItem('clerk_invite_id');
                     await fetch('/api/finalize-registration', {
                       method: 'POST',
                       headers: {'Content-Type': 'application/json'},
                       body: JSON.stringify({ inviteId: storedInviteId })
                     });
-                    localStorage.removeItem('clerk_invite_id');
                   } catch (fe) {
                     console.error('Auto-finalize error:', fe);
                   }

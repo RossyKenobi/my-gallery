@@ -26,7 +26,11 @@ import '../styles/global.css';
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ inviteId })
           });
-          const data = await res.json();
+          localStorage.removeItem('clerk_invite_id');
+          if (!res.ok) {
+            document.getElementById('status').innerText = 'Registration error. Please contact admin.';
+            return;
+          }
           window.location.href = '/';
         } catch (e) {
           document.getElementById('status').innerText = 'Registration error. Please contact admin.';
