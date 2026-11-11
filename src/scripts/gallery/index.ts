@@ -5,8 +5,15 @@ import { state } from './state';
  * Handles: rendering, edit mode, PhotoSwipe, upload, mini gallery, drag-drop sorting.
  */
 import PhotoSwipe from 'photoswipe';
-import Sortable from 'sortablejs';
-import { uploadToR2, savePostsToR2, updateStackInR2, dataUrlToBlob } from './api';
+
+let SortableModule: any = null;
+async function getSortable() {
+  if (!SortableModule) {
+    const mod = await import('sortablejs');
+    SortableModule = mod.default || mod;
+  }
+  return SortableModule;
+}
 
 export interface GalleryConfig {
   mode: 'main' | 'personal';
@@ -135,8 +142,10 @@ function renderLocalPreviewGrid() {
   }
 }
 
-function enableLocalSortable(grid: HTMLElement) {
+async function enableLocalSortable(grid: HTMLElement) {
   if (state.localSortable) state.localSortable.destroy();
+  const Sortable = await getSortable();
+  if (!grid.isConnected) return;
   state.localSortable = new Sortable(grid, {
     animation: 150,
     filter: '.mini-delete-btn, .add-more-btn-cell',
@@ -151,8 +160,6 @@ function enableLocalSortable(grid: HTMLElement) {
     }
   });
 }
-
-import { generateImageVersions } from '../compress';
 
 function getImageUrl(img: any): string {
   if (!img) return '';
@@ -540,9 +547,12 @@ function enterEditMode() {
   const el = document.getElementById('gallery');
 
   if (state.galleryConfig.canSort && el) {
-    state.sortableInstance = new Sortable(el, {
-      animation: 150,
-      ghostClass: 'sortable-ghost',
+    getSortable().then((Sortable) => {
+      if (!state.isEditMode) return;
+      state.sortableInstance = new Sortable(el, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+      });
     });
   }
 }
@@ -638,10 +648,12 @@ function renderMiniGallery() {
   }
 }
 
-function enableMiniSortable(canEdit: boolean) {
+async function enableMiniSortable(canEdit: boolean) {
   if (state.miniSortable) state.miniSortable.destroy();
   if (!canEdit || !state.miniGalleryGrid) return;
 
+  const Sortable = await getSortable();
+  if (!state.miniGalleryGrid) return;
   state.miniSortable = new Sortable(state.miniGalleryGrid, {
     animation: 150,
     filter: '.mini-delete-btn, .add-more-btn-cell',
@@ -949,6 +961,7 @@ async function handleLocalUpload() {
   let isPortrait = false;
 
   try {
+    const { uploadToR2 } = await import('./api');
     if (files[0]) {
       const img = new Image();
       img.src = URL.createObjectURL(files[0]);
@@ -1248,6 +1261,7 @@ export function initGallery(config: GalleryConfig) {
           renderExpandedGallery();
         } else {
           // Save stack order
+          const { savePostsToR2 } = await import('./api');
           const orderedPosts = newOrder.map(id => state.allPosts.find((p: any) => p.id === id)).filter(Boolean);
           const missingPosts = state.allPosts.filter((p: any) => !newOrder.includes(p.id));
           const updatedPosts = [...orderedPosts, ...missingPosts];
@@ -1444,6 +1458,7 @@ export function initGallery(config: GalleryConfig) {
       if (state.progressBarInner) state.progressBarInner.style.width = '10%';
 
       try {
+        const { uploadToR2, updateStackInR2, dataUrlToBlob } = await import('./api');
         const timestamp = Date.now();
         for (let i = 0; i < newDataUrls.length; i++) {
           const { idx, dataUrl } = newDataUrls[i];
