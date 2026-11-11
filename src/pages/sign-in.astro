@@ -1,7 +1,6 @@
 ---
 export const prerender = false;
 import { SignIn } from '@clerk/astro/components';
-import { ViewTransitions } from 'astro:transitions';
 ---
 <html lang="en">
 <head>
@@ -9,7 +8,7 @@ import { ViewTransitions } from 'astro:transitions';
   <title>Sign In - THE GALLERY</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <ViewTransitions />
+  <style is:global>@view-transition { navigation: auto; }</style>
   <style>
     body {
       background: #0a0a0a;

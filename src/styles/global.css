@@ -1156,3 +1156,13 @@ body.is-editing .sortable-ghost .gallery-item {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Native cross-document view transitions (replaces Astro ClientRouter, GA-10) --- */
+@view-transition {
+  navigation: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}

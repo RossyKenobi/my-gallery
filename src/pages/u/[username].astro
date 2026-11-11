@@ -3,7 +3,6 @@ export const prerender = false;
 import '../../styles/global.css';
 import GalleryShared from '../../components/GalleryShared.astro';
 import { getUserByUsername, getRedirect, isAdmin, ensureUser } from '../../lib/auth';
-import { ViewTransitions } from 'astro:transitions';
 import { getGalleryData } from '../api/posts';
 
 const { username } = Astro.params;
@@ -80,7 +79,6 @@ try {
       "image": backgroundUrl || '/images/hero_background.jpg',
       "url": Astro.url.href
     })} />
-    <ViewTransitions />
     
     <!-- PWA / Offline Support -->
     <link rel="manifest" href="/manifest.json" />
@@ -519,7 +517,7 @@ try {
     </script>
 
     <script>
-      document.addEventListener('astro:page-load', () => {
+      {
         const btn = document.getElementById('mobile-menu-btn');
         const overlay = document.getElementById('mobile-menu-overlay');
         const links = document.querySelectorAll('.mobile-link');
@@ -540,7 +538,7 @@ try {
             });
           });
         }
-      });
+      }
     </script>
   </body>
 </html>
