@@ -1,4 +1,5 @@
 import { openModal, closeModal } from '../utils/modal';
+import { isClerkSignUpUrl } from './interceptor';
 
 export function initClerkSignInAndInvite() {
   const signinModal = document.getElementById('custom-signin-modal');
@@ -21,14 +22,14 @@ export function initClerkSignInAndInvite() {
         signUpUrl: window.location.origin + '/#invite',
         transferable: false,
         routerPush: (to: string) => {
-          if (to.includes('sign-up') || to.includes('accounts.') || to.includes('clerk.')) {
+          if (isClerkSignUpUrl(to) || to.includes('#invite')) {
             window.location.hash = '#invite';
           } else {
             window.history.pushState({}, '', to);
           }
         },
         routerReplace: (to: string) => {
-          if (to.includes('sign-up') || to.includes('accounts.') || to.includes('clerk.')) {
+          if (isClerkSignUpUrl(to) || to.includes('#invite')) {
             window.location.hash = '#invite';
           } else {
             window.history.replaceState({}, '', to);
