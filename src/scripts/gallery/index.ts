@@ -1009,6 +1009,11 @@ async function handleLocalUpload() {
       const errData = await createRes.json();
       throw new Error(errData.error || 'Failed to create album');
     }
+    const createdData = await createRes.json();
+    if (createdData?.db_id) {
+      newPost.id = createdData.db_id;
+    }
+    newPost.owner_clerk_id = state.galleryConfig.userId;
 
     state.allPosts.push(newPost);
     renderGallery();
