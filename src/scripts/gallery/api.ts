@@ -58,10 +58,35 @@ export function dataUrlToBlob(dataUrl: string): Blob {
 export async function savePostsToR2(posts: any[], scope?: string) {
   let url = POSTS_API;
   if (scope) url += `?scope=${scope}`;
+  // Send only lightweight ordering & visibility metadata — never bulk-rewrite photos (GA-07)
+  const payload = posts.map((p: any) => ({
+    id: p.id,
+    is_hidden_from_global: Boolean(p.is_hidden_from_global),
+  }));
   const res = await fetch(url, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(posts),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Failed to save posts');
+}
+
+export async function updateStackInR2(
+  stackId: string,
+  payload: { caption: string; author: string; images: any[] }
+): Promise<{ images?: any[] }> {
+  const res = await fetch(`/api/stacks/${encodeURIComponent(stackId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let errMsg = 'Failed to update album';
+    try {
+      const data = await res.json();
+      if (data?.error) errMsg = data.error;
+    } catch {}
+    throw new Error(errMsg);
+  }
+  return res.json();
 }

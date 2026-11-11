@@ -14,7 +14,7 @@ export const state = {
   expandedPhotos: [] as any[],
   expandBtn: null as HTMLElement | null,
   currentEditingWrapper: null as HTMLElement | null,
-  currentMiniImages: [] as string[],
+  currentMiniImages: [] as any[],
   originalMiniImages: '',
   originalMiniCaption: '',
   originalMiniAuthor: '',

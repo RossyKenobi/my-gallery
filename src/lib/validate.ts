@@ -22,6 +22,7 @@ export function isValidImageUrl(url: unknown): url is string {
 }
 
 export interface CleanImage {
+  photoId: number | null;
   url: string;
   thumbnail_url: string | null;
   lqip: string | null;
@@ -35,7 +36,15 @@ export interface CleanImage {
 export function cleanImage(img: unknown): CleanImage | null {
   const obj: any = typeof img === 'string' ? { url: img } : img;
   if (!obj || typeof obj !== 'object' || !isValidImageUrl(obj.url)) return null;
+  const rawPid = obj.photoId;
+  const parsedPid =
+    typeof rawPid === 'number' && Number.isInteger(rawPid) && rawPid > 0
+      ? rawPid
+      : typeof rawPid === 'string' && /^\d+$/.test(rawPid)
+      ? Number(rawPid)
+      : null;
   return {
+    photoId: parsedPid,
     url: obj.url,
     thumbnail_url: isValidImageUrl(obj.thumbnail_url) ? obj.thumbnail_url : null,
     lqip: typeof obj.lqip === 'string' && LQIP_RE.test(obj.lqip) ? obj.lqip : null,

@@ -6,7 +6,7 @@ import { state } from './state';
  */
 import PhotoSwipe from 'photoswipe';
 import Sortable from 'sortablejs';
-import { uploadToR2, savePostsToR2, dataUrlToBlob } from './api';
+import { uploadToR2, savePostsToR2, updateStackInR2, dataUrlToBlob } from './api';
 
 export interface GalleryConfig {
   mode: 'main' | 'personal';
@@ -581,7 +581,8 @@ function renderMiniGallery() {
   const post = state.allPosts.find((p: any) => p.id === postId);
   const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
 
-  state.currentMiniImages.forEach((src, idx) => {
+  state.currentMiniImages.forEach((item, idx) => {
+    const src = getImageUrl(item);
     const div = document.createElement('div');
     div.className = 'mini-gallery-item';
 
@@ -668,8 +669,14 @@ function openMiniGallery(wrapper: HTMLElement) {
   const post = state.allPosts.find((p: any) => p.id === postId);
   const canEdit = state.galleryConfig.isAdmin || (post && post.owner_clerk_id === state.galleryConfig.userId);
 
-  const imagesRaw = wrapper.getAttribute('data-images') || '[]';
-  state.currentMiniImages = JSON.parse(imagesRaw);
+  if (post && Array.isArray(post.images) && post.images.length > 0) {
+    state.currentMiniImages = post.images.map((img: any) =>
+      typeof img === 'string' ? { url: img } : { ...img }
+    );
+  } else {
+    const imagesRaw = wrapper.getAttribute('data-images') || '[]';
+    state.currentMiniImages = JSON.parse(imagesRaw).map((u: string) => ({ url: u }));
+  }
   state.originalMiniImages = JSON.stringify(state.currentMiniImages);
 
   if (state.miniCaptionInput) {
@@ -1430,7 +1437,8 @@ export function initGallery(config: GalleryConfig) {
     if (!hasChanges) { closeModal(state.miniGalleryModal); return; }
 
     const newDataUrls: {idx: number; dataUrl: string}[] = [];
-    state.currentMiniImages.forEach((src, idx) => {
+    state.currentMiniImages.forEach((item, idx) => {
+      const src = getImageUrl(item);
       if (src.startsWith('data:')) newDataUrls.push({ idx, dataUrl: src });
     });
 
@@ -1456,20 +1464,37 @@ export function initGallery(config: GalleryConfig) {
           const finalUrl = await uploadToR2(blob, fileName, (p) => {
             if (state.progressBarInner) state.progressBarInner.style.width = `${basePercent + p * filePercentChunk}%`;
           });
-          // uploadToR2 returns { finalImageUrl, thumbnailUrl, lqip }; the mini gallery stores URL strings
-          state.currentMiniImages[idx] = finalUrl.finalImageUrl;
+          const probeImg = new Image();
+          probeImg.src = dataUrl;
+          await new Promise((r) => {
+            probeImg.onload = r;
+            probeImg.onerror = r;
+          });
+          const fileIsPortrait = probeImg.naturalHeight > probeImg.naturalWidth;
+          // Store the full image object so thumbnail_url, lqip and isPortrait are preserved (GA-07, GA-08)
+          state.currentMiniImages[idx] = {
+            url: finalUrl.finalImageUrl,
+            thumbnail_url: finalUrl.thumbnailUrl,
+            lqip: finalUrl.lqip,
+            isPortrait: fileIsPortrait,
+          };
         }
 
         if (state.progressStatusText) state.progressStatusText.innerText = 'Saving...';
         if (state.progressBarInner) state.progressBarInner.style.width = '80%';
 
+        const resData = await updateStackInR2(postId!, {
+          caption: newCaption,
+          author: newAuthor,
+          images: state.currentMiniImages,
+        });
+
         const updatedPost = state.allPosts.find((p: any) => p.id === postId);
         if (updatedPost) {
-          updatedPost.images = [...state.currentMiniImages];
+          updatedPost.images = resData?.images || [...state.currentMiniImages];
           updatedPost.caption = newCaption;
           updatedPost.author = newAuthor;
         }
-        await savePostsToR2(state.allPosts, config.saveScope);
         renderGallery();
 
         if (state.progressBarInner) state.progressBarInner.style.width = '100%';
@@ -1481,7 +1506,8 @@ export function initGallery(config: GalleryConfig) {
     };
 
     const originalArr = JSON.parse(state.originalMiniImages);
-    let deletedImages = originalArr.filter((img: string) => !state.currentMiniImages.includes(img));
+    const currentUrlSet = new Set(state.currentMiniImages.map(getImageUrl));
+    let deletedImages = originalArr.filter((img: any) => !currentUrlSet.has(getImageUrl(img)));
 
     if (deletedImages.length > 0) {
       const thumbContainer = document.getElementById('delete-thumbnails-container');

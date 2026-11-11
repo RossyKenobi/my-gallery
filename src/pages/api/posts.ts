@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from '../../lib/db';
 import { isAdmin, requireRegisteredUser } from '../../lib/auth';
-import { cleanImages } from '../../lib/validate';
+import { isValidStackId } from '../../lib/validate';
 
 export const prerender = false;
 
@@ -120,74 +120,50 @@ export const PUT: APIRoute = async ({ locals, request, url }) => {
     
     if (Array.isArray(body)) {
       const adminFlag = regUser.is_admin === true;
+      const queries: any[] = [];
 
-      for (let i = 0; i < body.length; i++) {
-        const post = body[i];
-        
-        if (scope === 'expanded') {
-          // Handled after the main loop to keep it clean
-          break;
-        } else if (scope === 'personal') {
-          // Personal sort: update personal_sort_order for own stacks only
-          await sql`
-            UPDATE stacks 
-            SET personal_sort_order = ${i}, caption = ${post.caption || ''}, author = ${post.author || ''} 
-            WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}
-          `;
-        } else if (adminFlag) {
-          // Admin global sort: update sort_order AND is_hidden_from_global
-          await sql`
-            UPDATE stacks 
-            SET sort_order = ${i}, 
-                is_hidden_from_global = ${post.is_hidden_from_global || false}, 
-                caption = ${post.caption || ''}, 
-                author = ${post.author || ''} 
-            WHERE id = ${post.id}
-          `;
-        } else {
-          // Non-admin on main page: only update metadata of own stacks
-          await sql`UPDATE stacks SET caption = ${post.caption || ''}, author = ${post.author || ''} WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}`;
+      if (scope === 'expanded') {
+        // Handle expanded scope: body is [{photoId, order}, ...] inside a transaction
+        for (const item of body) {
+          const pid = Number(item?.photoId);
+          const ord = Number(item?.order);
+          if (Number.isInteger(pid) && pid > 0 && Number.isFinite(ord)) {
+            if (adminFlag) {
+              queries.push(sql`UPDATE photos SET expanded_sort_order = ${ord} WHERE id = ${pid}`);
+            } else {
+              queries.push(sql`
+                UPDATE photos SET expanded_sort_order = ${ord}
+                WHERE id = ${pid}
+                AND stack_id IN (SELECT id FROM stacks WHERE owner_clerk_id = ${auth.userId})
+              `);
+            }
+          }
         }
-        
-        // Update photos if provided (skip for expanded scope)
-        if (scope !== 'expanded' && post.images && post.images.length > 0) {
-          const canEdit = adminFlag || (await sql`SELECT id FROM stacks WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}`).length > 0;
-          
-          if (canEdit) {
-            // Validate/normalise first; never wipe or partially rewrite a stack on a bad payload (GA-04, GA-08)
-            const images = cleanImages(post.images);
-            if (!images || images.length === 0) {
-              console.warn('Skipping photo rewrite for a stack: invalid image payload');
-              continue;
-            }
-            await sql`DELETE FROM photos WHERE stack_id = ${post.id}`;
-            for (let j = 0; j < images.length; j++) {
-              const imgObj = images[j];
-              await sql`
-                INSERT INTO photos (stack_id, image_url, thumbnail_url, lqip, is_portrait, sort_order, created_at)
-                VALUES (${post.id}, ${imgObj.url}, ${imgObj.thumbnail_url}, ${imgObj.lqip}, ${imgObj.isPortrait}, ${j}, NOW())
-              `;
-            }
+      } else {
+        // Stack ordering & global visibility only — never delete or rewrite photos here (GA-07)
+        for (let i = 0; i < body.length; i++) {
+          const post = body[i];
+          if (!post || !isValidStackId(post.id)) continue;
+
+          if (scope === 'personal') {
+            queries.push(sql`
+              UPDATE stacks
+              SET personal_sort_order = ${i}
+              WHERE id = ${post.id} AND owner_clerk_id = ${auth.userId}
+            `);
+          } else if (adminFlag) {
+            queries.push(sql`
+              UPDATE stacks
+              SET sort_order = ${i},
+                  is_hidden_from_global = ${Boolean(post.is_hidden_from_global)}
+              WHERE id = ${post.id}
+            `);
           }
         }
       }
-      // Handle expanded scope: body is [{photoId, order}, ...]
-      if (scope === 'expanded' && Array.isArray(body)) {
-        const adminFlag = await isAdmin(auth.userId);
-        for (const item of body) {
-          if (item.photoId && item.order !== undefined) {
-            // Update photo order. If admin, allow all. If not, only for own stacks.
-            if (adminFlag) {
-              await sql`UPDATE photos SET expanded_sort_order = ${item.order} WHERE id = ${item.photoId}`;
-            } else {
-              await sql`
-                UPDATE photos SET expanded_sort_order = ${item.order}
-                WHERE id = ${item.photoId}
-                AND stack_id IN (SELECT id FROM stacks WHERE owner_clerk_id = ${auth.userId})
-              `;
-            }
-          }
-        }
+
+      if (queries.length > 0) {
+        await sql.transaction(queries);
       }
 
       return new Response(JSON.stringify({ success: true }));
