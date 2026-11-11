@@ -207,6 +207,11 @@ function createGalleryItemHTML(post: any): string {
   const captionData = escapeHTML(post.caption || '');
   const authorData = escapeHTML(post.author || '');
   const ownerUsernameData = escapeHTML(post.owner_username || '');
+  const displayAuthor = (post.author || post.owner_username || '').trim();
+  const fallbackAlt = displayAuthor
+    ? (images.length > 1 ? `Album of ${images.length} photos by ${displayAuthor}` : `Photo by ${displayAuthor}`)
+    : 'Gallery Post';
+  const altText = captionData || escapeHTML(fallbackAlt);
 
   let isPortrait = post.isPortrait;
   if (firstImage && typeof firstImage === 'object' && firstImage.isPortrait !== undefined) {
@@ -245,7 +250,7 @@ function createGalleryItemHTML(post: any): string {
   return `
     <div class="gallery-item-wrapper ${orientationClass} ${hideClass}" data-id="${escapeHTML(post.id)}" data-images="${imagesData}" data-caption="${captionData}" data-author="${authorData}" data-owner-username="${ownerUsernameData}" data-needs-check="${isPortrait === undefined}">
       <a href="${escapeHTML(mainUrl)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(mainUrl)}" style="${lqipStyle}">
-        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${captionData || 'Gallery Post'}" loading="lazy" decoding="async" />
+        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${altText}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
         ${hideBtnHTML}
         ${isCarousel ? `
@@ -313,11 +318,13 @@ function createExpandedItemHTML(photo: any): string {
   const srcset = (thumbnail !== photoUrl) ? `srcset="${escapeHTML(thumbnail)} 640w, ${escapeHTML(photoUrl)} 2400w" sizes="(max-width: 600px) 100vw, 33vw"` : '';
   
   const orientationClass = photo.isPortrait === true ? 'is-portrait' : 'is-landscape';
+  const displayAuthor = (photo.author || photo.owner_username || '').trim();
+  const altText = photo.caption ? escapeHTML(photo.caption) : escapeHTML(displayAuthor ? `Photo by ${displayAuthor}` : 'Photo');
 
   return `
     <div class="gallery-item-wrapper ${orientationClass}" data-photo-id="${escapeHTML(photo.photoId)}" data-stack-id="${escapeHTML(photo.stackId)}" data-owner-username="${escapeHTML(photo.owner_username)}" data-author="${escapeHTML(photo.author)}">
       <a href="${escapeHTML(photoUrl)}" class="gallery-item" tabindex="0" data-pswp-src="${escapeHTML(photoUrl)}" style="${lqipStyle}">
-        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${escapeHTML(photo.caption || 'Photo')}" loading="lazy" decoding="async" />
+        <img src="${escapeHTML(thumbnail)}" ${srcset} class="${lqip ? 'has-lqip' : ''}" alt="${altText}" loading="lazy" decoding="async" />
         ${deleteBtnHTML}
       </a>
     </div>
@@ -711,6 +718,27 @@ function openMiniGallery(wrapper: HTMLElement) {
 
 // --- PhotoSwipe ---
 function registerPhotoSwipeUI(pswp: any, wrapper: HTMLElement, defaultCaption?: string) {
+  const stackId = wrapper.getAttribute('data-id') || wrapper.getAttribute('data-stack-id') || '';
+  const updateDeepLink = () => {
+    if (!stackId) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('p', stackId);
+    const idx = pswp.currIndex || 0;
+    if (idx > 0) url.searchParams.set('i', String(idx));
+    else url.searchParams.delete('i');
+    window.history.replaceState(null, '', url.toString());
+  };
+  pswp.on('firstUpdate', updateDeepLink);
+  pswp.on('change', updateDeepLink);
+  pswp.on('close', () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('p') || url.searchParams.has('i')) {
+      url.searchParams.delete('p');
+      url.searchParams.delete('i');
+      window.history.replaceState(null, '', url.toString());
+    }
+  });
+
   pswp.on('uiRegister', function() {
     // 1. Custom Caption
     pswp.ui!.registerElement({
@@ -884,61 +912,71 @@ function attachGalleryListeners() {
 
       e.preventDefault();
       if (document.body.classList.contains('is-swiping')) return;
-      const imagesRaw = wrapper.getAttribute('data-images');
-      const captionStr = wrapper.getAttribute('data-caption');
-
-      if (imagesRaw) {
-        const imagesArray = JSON.parse(imagesRaw);
-        const pswpItems = imagesArray.map((imgSrc: string) => ({
-          src: imgSrc, width: 0, height: 0, alt: captionStr
-        }));
-
-        const pswp = new PhotoSwipe({
-          dataSource: pswpItems,
-          mainScrollEnd: true,
-          spacing: window.innerWidth > 768 ? -0.35 : 0.05,
-          closeSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
-          zoomSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line class="pswp__zoom-icn-bar-v" x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>',
-          arrowPrevSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>',
-          arrowNextSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
-          paddingFn: (_viewportSize: any, _itemData: any, _index: number) => {
-            const pad = window.innerWidth > 768 ? window.innerWidth * 0.22 : 20;
-            return { top: 40, bottom: 80, left: pad, right: pad };
-          }
-        });
-
-        const adjustSpacing = () => {
-          if (window.innerWidth <= 768) return;
-          if (!(pswp as any).currSlide || !(pswp as any).currSlide.data || !(pswp as any).currSlide.data.width) return;
-          const ratio = (pswp as any).currSlide.data.width / (pswp as any).currSlide.data.height;
-          let newSpacing = -0.40;
-          if (ratio < 0.8) newSpacing = -0.65;
-          else if (ratio < 1.2) newSpacing = -0.45;
-          if (pswp.options.spacing !== newSpacing) {
-            pswp.options.spacing = newSpacing;
-            pswp.updateSize(false);
-          }
-        };
-
-        pswp.on('change', adjustSpacing);
-        pswp.on('firstUpdate', adjustSpacing);
-
-        registerPhotoSwipeUI(pswp, wrapper as HTMLElement, captionStr);
-
-        pswp.on('gettingData', (e: any) => {
-          const item = e.data;
-          if (item.width > 0) return;
-          const img = new Image();
-          img.onload = () => {
-            item.width = img.naturalWidth; item.height = img.naturalHeight;
-            pswp.refreshSlideContent(e.index); pswp.updateSize(true);
-          };
-          img.src = item.src;
-        });
-        pswp.init();
-      }
+      openStackLightbox(wrapper as HTMLElement, 0);
     });
   });
+}
+
+function openStackLightbox(wrapper: HTMLElement, initialIndex = 0) {
+  const imagesRaw = wrapper.getAttribute('data-images');
+  const captionStr = wrapper.getAttribute('data-caption') || '';
+  const displayAuthor = (wrapper.getAttribute('data-author') || wrapper.getAttribute('data-owner-username') || '').trim();
+
+  if (imagesRaw) {
+    const imagesArray = JSON.parse(imagesRaw);
+    const clampedIndex = Math.max(0, Math.min(initialIndex, imagesArray.length - 1));
+    const pswpItems = imagesArray.map((imgSrc: string, idx: number) => ({
+      src: imgSrc,
+      width: 0,
+      height: 0,
+      alt: captionStr || (displayAuthor ? `Photo ${idx + 1} of ${imagesArray.length} by ${displayAuthor}` : `Photo ${idx + 1} of ${imagesArray.length}`),
+    }));
+
+    const pswp = new PhotoSwipe({
+      dataSource: pswpItems,
+      index: clampedIndex,
+      mainScrollEnd: true,
+      spacing: window.innerWidth > 768 ? -0.35 : 0.05,
+      closeSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+      zoomSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line class="pswp__zoom-icn-bar-v" x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>',
+      arrowPrevSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>',
+      arrowNextSVG: '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+      paddingFn: (_viewportSize: any, _itemData: any, _index: number) => {
+        const pad = window.innerWidth > 768 ? window.innerWidth * 0.22 : 20;
+        return { top: 40, bottom: 80, left: pad, right: pad };
+      }
+    });
+
+    const adjustSpacing = () => {
+      if (window.innerWidth <= 768) return;
+      if (!(pswp as any).currSlide || !(pswp as any).currSlide.data || !(pswp as any).currSlide.data.width) return;
+      const ratio = (pswp as any).currSlide.data.width / (pswp as any).currSlide.data.height;
+      let newSpacing = -0.40;
+      if (ratio < 0.8) newSpacing = -0.65;
+      else if (ratio < 1.2) newSpacing = -0.45;
+      if (pswp.options.spacing !== newSpacing) {
+        pswp.options.spacing = newSpacing;
+        pswp.updateSize(false);
+      }
+    };
+
+    pswp.on('change', adjustSpacing);
+    pswp.on('firstUpdate', adjustSpacing);
+
+    registerPhotoSwipeUI(pswp, wrapper, captionStr);
+
+    pswp.on('gettingData', (e: any) => {
+      const item = e.data;
+      if (item.width > 0) return;
+      const img = new Image();
+      img.onload = () => {
+        item.width = img.naturalWidth; item.height = img.naturalHeight;
+        pswp.refreshSlideContent(e.index); pswp.updateSize(true);
+      };
+      img.src = item.src;
+    });
+    pswp.init();
+  }
 }
 
 // --- New Local Upload (R2) ---
@@ -1606,6 +1644,24 @@ export function initGallery(config: GalleryConfig) {
     // Apply initial expand state after data loads
     if (config.initialExpanded && config.mode === 'personal') {
       expandGallery();
+    }
+
+    // Open deep-linked album/slide if ?p=<stackId> is present in URL (GA-28)
+    const params = new URLSearchParams(window.location.search);
+    const deepPostId = params.get('p');
+    if (deepPostId) {
+      const deepIndex = parseInt(params.get('i') || '0', 10) || 0;
+      const selector = state.isExpanded
+        ? `.gallery-item-wrapper[data-stack-id="${CSS.escape(deepPostId)}"]`
+        : `.gallery-item-wrapper[data-id="${CSS.escape(deepPostId)}"]`;
+      const targetWrapper = document.querySelector<HTMLElement>(selector);
+      if (targetWrapper) {
+        if (state.isExpanded) {
+          targetWrapper.click();
+        } else {
+          openStackLightbox(targetWrapper, deepIndex);
+        }
+      }
     }
   });
 
