@@ -121,7 +121,7 @@ export const prerender = false;
             signUpContainer.style.display = 'block';
             (window as any).Clerk?.mountSignUp(signUpContainer, {
               routing: 'hash',
-              fallbackRedirectUrl: `/finalize?inviteId=${encodeURIComponent(data.inviteId)}`,
+              fallbackRedirectUrl: '/finalize',
               appearance: {
                 variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: 'black', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
                 elements: {

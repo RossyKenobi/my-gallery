@@ -16,7 +16,10 @@ import '../styles/global.css';
   <div id="status">Finalizing...</div>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const inviteId = urlParams.get('inviteId') || localStorage.getItem('clerk_invite_id');
+    const inviteId = localStorage.getItem('clerk_invite_id') || urlParams.get('inviteId');
+    if (urlParams.has('inviteId')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     
     async function finalize() {
       if (inviteId) {

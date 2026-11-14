@@ -198,7 +198,7 @@ export function initClerkSignInAndInvite() {
             openModal(signupModal);
 
             (window as any).Clerk.mountSignUp(document.getElementById('clerk-signup-mount'), {
-              fallbackRedirectUrl: `/finalize?inviteId=${encodeURIComponent(data.inviteId)}`,
+              fallbackRedirectUrl: '/finalize',
               appearance: {
                 variables: { colorBackground: 'transparent', colorText: '#ededed', colorPrimary: '#ededed', colorTextOnPrimaryBackground: 'black', colorInputBackground: 'transparent', colorInputText: '#ededed', colorNeutral: 'rgba(237,237,237,0.5)', colorTextSecondary: 'rgba(237,237,237,0.5)' },
                 elements: {
